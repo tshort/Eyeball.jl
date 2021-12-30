@@ -27,6 +27,8 @@ The user can interactively browse the object tree using the following keys:
 
 ## Examples
 
+Explore an object:
+
 ```julia
 a = (h=rand(5), e=:(5sin(pi*t)), f=sin, c=33im, set=Set((:a, 9, rand(1:5, 8))), b=(c=1,d=9,e=(i=9,f=0)), x=9 => 99:109, d=Dict(1=>2, 3=>4), ds=Dict(:s=>4,:t=>7), dm=Dict(1=>9, "x"=>8))
 eye(a)
@@ -72,11 +74,15 @@ julia> eye(a)
 v     ds: Dict{Symbol, Int64} Dict(:s => 4, :t => 7)
 ```
 
+Explore a Module:
+
+
 ```julia
 eye()      # equivalent to `eye(Main)`
 ```
 <details>
   <summary>Expand results</summary>
+  
 ```jl
 julia> eye()
 [f] toggle fields [d] docs [o] open [t] typeof [q] quit
@@ -117,13 +123,17 @@ julia> eye()
        x: Pair{Int64, UnitRange{Int64}} 9 => 99:109
 v       first: Int64 9
 ```
+
 </details>
+
+Explore a type tree:
 
 ```julia
 eye(Number)
 ```
 <details>
   <summary>Expand results</summary>
+  
 ```jl
 julia> eye(Number)
 [f] toggle fields [d] docs [o] open [t] typeof [q] quit
@@ -154,6 +164,8 @@ julia> eye(Number)
          : DataType UInt8
    +   : UnionAll Rational
 ```
+
+</details>
 
 ## API
 
