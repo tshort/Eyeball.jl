@@ -18,6 +18,7 @@ using .FoldingTrees
 
 export eye
 
+global cursor = Ref(1)
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
@@ -26,7 +27,7 @@ function eye(x = Main, depth = 10; interactive = true)
     if interactive
         term = default_terminal()
         menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
-        choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=menu.currentidx)
+        choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=cursor)
         choice !== nothing && return choice.data.obj
         return
     else
@@ -179,6 +180,10 @@ function keypress(menu::TreeMenu, i::UInt32)
         node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
         menu.chosen = true          
         return true
+    elseif i == Int('j')
+        cursor[] = TerminalMenus.move_down!(menu, cursor[])
+    elseif i == Int('k')
+        cursor[] = TerminalMenus.move_up!(menu, cursor[])
     elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
         node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
         node.foldchildren = false                 

@@ -16,7 +16,7 @@ eye(object = Main, depth = 10; interactive = true)
 
 The user can interactively browse the object tree using the following keys:
 
-* `↑↓←→` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree.
+* `↑↓ ← →` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree. Vim movement keys (`h j k l`) are also supported.
 * `f` -- Toggle fields. By default, parameters are shown for most objects.
   `f` toggles between the normal view and a view showing the fields of an object.
 * `d` -- Docs. Show documentation on the object.
