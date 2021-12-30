@@ -21,13 +21,17 @@ export eye
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
-function eye(x = Main, depth = 10)
+function eye(x = Main, depth = 10; interactive = true)
     root = treelist(x, depth = depth - 1)
     term = default_terminal()
     menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
-    choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=menu.currentidx)
-    choice !== nothing && return choice.data.obj
-    return
+    if interactive
+        choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=menu.currentidx)
+        choice !== nothing && return choice.data.obj
+        return
+    else
+        return root
+    end
 end
 
 struct ObjectWrapper
@@ -36,6 +40,8 @@ struct ObjectWrapper
     showfields
 end
 ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
+
+Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
 function style(str; kws...)
     sprint(; context = :color => true) do io
