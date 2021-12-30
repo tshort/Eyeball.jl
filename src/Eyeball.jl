@@ -23,13 +23,14 @@ default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
 function eye(x = Main, depth = 10; interactive = true)
     root = treelist(x, depth = depth - 1)
-    term = default_terminal()
-    menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
     if interactive
+        term = default_terminal()
+        menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
         choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=menu.currentidx)
         choice !== nothing && return choice.data.obj
         return
     else
+        menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = keypress)
         return root
     end
 end
