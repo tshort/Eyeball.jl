@@ -9,9 +9,10 @@ Eyeball exports one main tool to browse Julia objects and types.
 ```julia
 eye(object)
 eye(object, depth)
+eye(object = Main, depth = 10; interactive = true)
 ```
 
-`depth` controls the depth of folding.
+`depth` controls the depth of folding. 
 
 The user can interactively browse the object tree using the following keys:
 
@@ -165,6 +166,49 @@ julia> eye(Number)
 ```
 
 </details>
+
+`eye` can also be used noninteractively.
+With the keyword argument `interactive` set to `false`, `eye` returns the tree as a `FoldingTrees.Node`.
+That is automatically displayed via `show` or by using `FoldingTrees.print_tree`.
+
+```julia
+eye(Number, interactive = false)
+```
+<details>
+  <summary>Expand results</summary>
+  
+```jl
+julia> eye(Number, interactive = false)
+  DataType
+├─ + : UnionAll Complex
+└─   : DataType Real
+   ├─   : DataType AbstractFloat
+   │  ├─ + : DataType BigFloat
+   │  ├─   : DataType Float16
+   │  ├─   : DataType Float32
+   │  └─   : DataType Float64
+   ├─   : DataType AbstractIrrational
+   │  └─ + : UnionAll Irrational
+   ├─   : DataType Integer
+   │  ├─   : DataType Bool
+   │  ├─   : DataType Signed
+   │  │  ├─ + : DataType BigInt
+   │  │  ├─   : DataType Int128
+   │  │  ├─   : DataType Int16
+   │  │  ├─   : DataType Int32
+   │  │  ├─   : DataType Int64
+   │  │  └─   : DataType Int8
+   │  └─   : DataType Unsigned
+   │     ├─   : DataType UInt128
+   │     ├─   : DataType UInt16
+   │     ├─   : DataType UInt32
+   │     ├─   : DataType UInt64
+   │     └─   : DataType UInt8
+   └─ + : UnionAll Rational
+```
+
+</details>
+
 
 ## API
 

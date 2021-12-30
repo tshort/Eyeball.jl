@@ -43,6 +43,8 @@ ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
+
+# from https://github.com/MichaelHatherly/InteractiveErrors.jl/blob/5e2e90f9636d748aa3aae0887e18df388829b8e7/src/InteractiveErrors.jl#L52-L61
 function style(str; kws...)
     sprint(; context = :color => true) do io
         printstyled(
