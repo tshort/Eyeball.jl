@@ -1,8 +1,9 @@
 # Eyeball.jl
 *Object and type viewer for Julia*
 
-[![Build Status](https://github.com/tshort/Eyeball.jl/workflows/CI/badge.svg)](https://github.com/tshort/Eyeball.jl/actions?query=workflow%3A%22CI%22+branch%3Amaster)
-[![Codecov](https://codecov.io/github/tshort/Eyeball.jl/coverage.svg)](https://codecov.io/gh/tshort/Eyeball.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://tshort.github.io/Eyeball.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://tshort.github.io/Eyeball.jl/dev)
+[![Build Status](https://github.com/tshort/Eyeball.jl/workflows/CI/badge.svg)](https://github.com/tshort/Eyeball.jl/actions)
 
 Eyeball exports one main tool to browse Julia objects and types.
 
