@@ -27,6 +27,7 @@ function eye(x = Main, depth = 10; interactive = true)
     if interactive
         term = default_terminal()
         menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
+        cursor[] = 1
         choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=cursor)
         choice !== nothing && return choice.data.obj
         return
