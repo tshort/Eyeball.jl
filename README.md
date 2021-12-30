@@ -1,0 +1,190 @@
+# Eyeball.jl
+*Object and type viewer for Julia*
+
+[![Build Status](https://github.com/tshort/Eyeball.jl/workflows/CI/badge.svg)](https://github.com/tshort/Eyeball.jl/actions?query=workflow%3A%22CI%22+branch%3Amaster)
+[![Codecov](https://codecov.io/github/tshort/Eyeball.jl/coverage.svg)](https://codecov.io/gh/tshort/Eyeball.jl)
+
+Eyeball exports one main tool to browse Julia objects and types.
+
+
+```julia
+eye(object)
+eye(object, depth)
+```
+
+`depth` controls the depth of folding.
+
+The user can interactively browse the object tree using the following keys:
+
+* `↑↓←→` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree.
+* `f` -- Toggle fields. By default, parameters are shown for most objects.
+  `f` toggles between the normal view and a view showing the fields of an object.
+* `d` -- Docs. Show documentation on the object.
+* `o` -- Open. Open the object in a new tree view.
+* `t` -- Typeof. Show the type of the object in a new tree view.
+* `enter` -- Return the object.
+* `q` -- Quit
+
+## Examples
+
+```julia
+a = (h=rand(5), e=:(5sin(pi*t)), f=sin, c=33im, set=Set((:a, 9, rand(1:5, 8))), b=(c=1,d=9,e=(i=9,f=0)), x=9 => 99:109, d=Dict(1=>2, 3=>4), ds=Dict(:s=>4,:t=>7), dm=Dict(1=>9, "x"=>8))
+eye(a)
+```
+```jl
+julia> eye(a)
+[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+ >   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
+   +  h: Vector{Float64} [0.3610421863508626, 0.12771541533567443, 0.6201544967866688, 0.11594457518848911, 0.305796804477252
+      e: Expr 5 * sin(pi * t)
+       head: Symbol call
+       args: Vector{Any} Any[:*, 5, :(sin(pi * t))]
+        1: Symbol *
+        2: Int64 5
+        3: Expr sin(pi * t)
+         head: Symbol call
+         args: Vector{Any} Any[:sin, :(pi * t)]
+          1: Symbol sin
+          2: Expr pi * t
+           head: Symbol call
+           args: Vector{Any} Any[:*, :pi, :t]
+            1: Symbol *
+            2: Symbol pi
+            3: Symbol t
+      f: typeof(sin) sin
+   +  c: Complex{Int64} 0 + 33im
+      set: Set{Any} Set(Any[:a, [5, 2, 5, 2, 1, 1, 3, 4], 9])
+       : Symbol a
+   +   : Vector{Int64} [5, 2, 5, 2, 1, 1, 3, 4]
+       : Int64 9
+      b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}} (c = 1, d = 9, e = (i = 9, 
+       c: Int64 1
+       d: Int64 9
+       e: NamedTuple{(:i, :f), Tuple{Int64, Int64}} (i = 9, f = 0)
+        i: Int64 9
+        f: Int64 0
+      x: Pair{Int64, UnitRange{Int64}} 9 => 99:109
+       first: Int64 9
+   +   second: UnitRange{Int64} 99:109
+      d: Dict{Int64, Int64} Dict(3 => 4, 1 => 2)
+       3: Int64 4
+       1: Int64 2
+v     ds: Dict{Symbol, Int64} Dict(:s => 4, :t => 7)
+```
+
+```julia
+eye()      # equivalent to `eye(Main)`
+```
+<details>
+  <summary>Expand results</summary>
+```jl
+julia> eye()
+[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+ >   Module
+      Base: Module Base
+      Core: Module Core
+      InteractiveUtils: Module InteractiveUtils
+      Main: Module Main
+      a: NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, S
+   +   h: Vector{Float64} [0.3610421863508626, 0.12771541533567443, 0.6201544967866688, 0.11594457518848911, 0.30579680447725
+       e: Expr 5 * sin(pi * t)
+        head: Symbol call
+        args: Vector{Any} Any[:*, 5, :(sin(pi * t))]
+         1: Symbol *
+         2: Int64 5
+         3: Expr sin(pi * t)
+          head: Symbol call
+          args: Vector{Any} Any[:sin, :(pi * t)]
+           1: Symbol sin
+           2: Expr pi * t
+            head: Symbol call
+            args: Vector{Any} Any[:*, :pi, :t]
+             1: Symbol *
+             2: Symbol pi
+             3: Symbol t
+       f: typeof(sin) sin
+   +   c: Complex{Int64} 0 + 33im
+       set: Set{Any} Set(Any[:a, [5, 2, 5, 2, 1, 1, 3, 4], 9])
+        : Symbol a
+   +    : Vector{Int64} [5, 2, 5, 2, 1, 1, 3, 4]
+        : Int64 9
+       b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}} (c = 1, d = 9, e = (i = 9,
+        c: Int64 1
+        d: Int64 9
+        e: NamedTuple{(:i, :f), Tuple{Int64, Int64}} (i = 9, f = 0)
+         i: Int64 9
+         f: Int64 0
+       x: Pair{Int64, UnitRange{Int64}} 9 => 99:109
+v       first: Int64 9
+```
+</details>
+
+```julia
+eye(Number)
+```
+<details>
+  <summary>Expand results</summary>
+```jl
+julia> eye(Number)
+[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+ >   DataType
+   +  : UnionAll Complex
+      : DataType Real
+       : DataType AbstractFloat
+   +    : DataType BigFloat
+        : DataType Float16
+        : DataType Float32
+        : DataType Float64
+       : DataType AbstractIrrational
+   +    : UnionAll Irrational
+       : DataType Integer
+        : DataType Bool
+        : DataType Signed
+   +     : DataType BigInt
+         : DataType Int128
+         : DataType Int16
+         : DataType Int32
+         : DataType Int64
+         : DataType Int8
+        : DataType Unsigned
+         : DataType UInt128
+         : DataType UInt16
+         : DataType UInt32
+         : DataType UInt64
+         : DataType UInt8
+   +   : UnionAll Rational
+```
+
+## API
+
+By default, `eye` shows the properties of an object.
+That can be customized for different objects.
+For example, `Dict`s are shown with the key then the value, and abstract types are shown with subtypes.
+To customize what's shown for `SomeType`, define `Eyeball.getobjects(x::SomeType)`.
+This method should return an array of `Pair`s describing the objects to be shown.
+The first component of the `Pair` is the key or index of the object, and the second component is the object.
+
+The display of objects can also be customized with the following boolean methods:
+
+```julia
+Eyeball.shouldrecurse(x, len)   
+Eyeball.foldobject(x)   
+```
+
+`shouldrecurse` controls whether `eye` recurses into the object.
+`x` is the object. `len` is the length of the object. 
+This defaults to `true` when `len < 30`.
+For overly large or complex objects, it helps to return `false`.
+That's done internally for `Module`s, `Method`s, and a few other types.
+`foldobject` controls whether `eye` automatically folds the object.
+This is useful for types where the components are usually not needed.
+This defaults to `false`.
+
+## Under the Hood
+
+`Eyeball` uses [FoldingTrees](https://github.com/JuliaCollections/FoldingTrees.jl) for display of trees and interactivity.
+[This fork](https://github.com/MichaelHatherly/InteractiveErrors.jl/tree/master/src/vendor/FoldingTrees)
+was extended to support customized key presses.
+
+The code was adapted from [InteractiveErrors.jl](https://github.com/MichaelHatherly/InteractiveErrors.jl)
+ and [Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl).
