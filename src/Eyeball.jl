@@ -55,7 +55,7 @@ function eye(x = Main, depth = 10; interactive = true)
         elseif i == Int('d')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            pager(doc(node.data.obj))
+            pager(getdoc(node.data.obj))
             resetterm()
         elseif i == Int('m')
             REPL.Terminals.clear(term)
@@ -128,7 +128,8 @@ ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
-
+getdoc(x) = doc(x)
+getdoc(x::Method) = doc(x.module.eval(x.name))
 # from https://github.com/MichaelHatherly/InteractiveErrors.jl/blob/5e2e90f9636d748aa3aae0887e18df388829b8e7/src/InteractiveErrors.jl#L52-L61
 function style(str; kws...)
     sprint(; context = :color => true) do io
