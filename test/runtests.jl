@@ -43,7 +43,8 @@ end
 @testset "TreeMenu" begin
     a = (h=zeros(5), e=:(5sin(pi*t)), f=sin, c=33im, set=Set((:a, 9, 1:5, 8)), b=(c=1,d=9,e=(i=9,f=0)), x=9 => 99:109, d=Dict(1=>2, 3=>4), ds=Dict(:s=>4,:t=>7), dm=Dict(1=>9, "x"=>8))
     root = eye(a, 1, interactive = false)
-    menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = Eyeball.keypress)
+    menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30)
+    # menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = Eyeball.keypress)
     @test TerminalMenus.numoptions(menu) == 11
     io = IOBuffer()
     state = TerminalMenus.printmenu(io, menu, 2; init=true)
@@ -54,9 +55,9 @@ end
     @test lines[8] == "   +  \e[36mx\e[39m: \e[32mPair{Int64, UnitRange{Int64}}\e[39m 9 => 99:109"
     @test length(lines) == 11
     menu.cursoridx = 11
-    TerminalMenus.keypress(menu, UInt32('f'))
-    @test TerminalMenus.numoptions(menu) == 19
-    node = FoldingTrees.setcurrent!(menu, menu.cursoridx) 
-    o = node.data.obj 
-    @test o isa Dict
+    # TerminalMenus.keypress(menu, UInt32('f'))
+    # @test TerminalMenus.numoptions(menu) == 19
+    # node = FoldingTrees.setcurrent!(menu, menu.cursoridx) 
+    # o = node.data.obj 
+    # @test o isa Dict
 end

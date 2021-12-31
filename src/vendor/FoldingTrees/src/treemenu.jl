@@ -17,7 +17,7 @@ mutable struct TreeMenu{N<:Node} <: TerminalMenus._ConfiguredMenu{TerminalMenus.
     keypress
     config::TerminalMenus.Config
 end
-function TreeMenu(root; pagesize::Int=10, dynamic = false, maxsize = pagesize, keypress = (m,i) = false, kwargs...)
+function TreeMenu(root; pagesize::Int=10, dynamic = false, maxsize = pagesize, keypress = (m,i) -> false, kwargs...)
     pagesize = min(pagesize, count_open_leaves(root))
     return TreeMenu(root, root, 1, 1, 1, false, pagesize, dynamic, maxsize, 0, keypress, TerminalMenus.Config(kwargs...))
 end
