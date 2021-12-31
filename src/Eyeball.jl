@@ -98,6 +98,14 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             menu.chosen = true
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             return true
+        elseif i == Int('s')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            io = IOContext(IOBuffer(), :displaysize => displaysize(term), :limit => true, :color => true)
+            show(io, MIME"text/plain"(), node.data.obj)
+            sobj = String(take!(io.io))
+            pager((node.data.obj))
+            resetterm()
         elseif i == Int('t')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
@@ -116,7 +124,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [t] typeof [z] size [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false

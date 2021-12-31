@@ -23,6 +23,7 @@ The user can interactively browse the object tree using the following keys:
 * `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
 * `o` -- Open. Open the object in a new tree view.
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
+* `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Size. Toggle showing size of objects.
 * `enter` -- Return the object.
