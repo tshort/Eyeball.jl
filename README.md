@@ -39,43 +39,43 @@ eye(a)
 ```
 ```jl
 julia> eye(a)
-[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
  >   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
-   +  h: Vector{Float64} [0.3610421863508626, 0.12771541533567443, 0.6201544967866688, 0.11594457518848911, 0.305796804477252
-      e: Expr 5 * sin(pi * t)
-       head: Symbol call
-       args: Vector{Any} Any[:*, 5, :(sin(pi * t))]
-        1: Symbol *
-        2: Int64 5
-        3: Expr sin(pi * t)
-         head: Symbol call
-         args: Vector{Any} Any[:sin, :(pi * t)]
-          1: Symbol sin
-          2: Expr pi * t
-           head: Symbol call
-           args: Vector{Any} Any[:*, :pi, :t]
-            1: Symbol *
-            2: Symbol pi
-            3: Symbol t
-      f: typeof(sin) sin
-   +  c: Complex{Int64} 0 + 33im
-      set: Set{Any} Set(Any[:a, [5, 2, 5, 2, 1, 1, 3, 4], 9])
-       : Symbol a
-   +   : Vector{Int64} [5, 2, 5, 2, 1, 1, 3, 4]
-       : Int64 9
-      b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}} (c = 1, d = 9, e = (i = 9, 
-       c: Int64 1
-       d: Int64 9
-       e: NamedTuple{(:i, :f), Tuple{Int64, Int64}} (i = 9, f = 0)
-        i: Int64 9
-        f: Int64 0
-      x: Pair{Int64, UnitRange{Int64}} 9 => 99:109
-       first: Int64 9
-   +   second: UnitRange{Int64} 99:109
-      d: Dict{Int64, Int64} Dict(3 => 4, 1 => 2)
-       3: Int64 4
-       1: Int64 2
-v     ds: Dict{Symbol, Int64} Dict(:s => 4, :t => 7)
+   +  h: Vector{Float64} (5,) [0.893213, 0.120307, 0.322837, 0.0256164, 0.416702]
+      e: Expr  :(5 * sin(pi * t))
+       head: Symbol  :call
+       args: Vector{Any} (3,) Any[:*, 5, :(sin(pi * t))]
+        1: Symbol  :*
+        2: Int64  5
+        3: Expr  :(sin(pi * t))
+         head: Symbol  :call
+         args: Vector{Any} (2,) Any[:sin, :(pi * t)]
+          1: Symbol  :sin
+          2: Expr  :(pi * t)
+           head: Symbol  :call
+           args: Vector{Any} (3,) Any[:*, :pi, :t]
+            1: Symbol  :*
+            2: Symbol  :pi
+            3: Symbol  :t
+      f: typeof(sin)  sin
+   +  c: Complex{Int64}  0+33im
+      set: Set{Any}  Set(Any[:a, [5, 2, 1, 5, 3, 3, 1, 1], 9])
+       : Symbol  :a
+   +   : Vector{Int64} (8,) [5, 2, 1, 5, 3, 3, 1, 1]
+       : Int64  9
+      b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}}  (c = 1, d = 9, e = (i = 9,
+       c: Int64  1
+       d: Int64  9
+       e: NamedTuple{(:i, :f), Tuple{Int64, Int64}}  (i = 9, f = 0)
+        i: Int64  9
+        f: Int64  0
+      x: Pair{Int64, UnitRange{Int64}}  9=>99:109
+       first: Int64  9
+   +   second: UnitRange{Int64} (11,) 99:109
+      d: Dict{Int64, Int64}  Dict(3=>4, 1=>2)
+       3: Int64  4
+       1: Int64  2
+v     ds: Dict{Symbol, Int64}  Dict(:s=>4, :t=>7)
 ```
 
 Explore a Module:
@@ -89,43 +89,43 @@ eye()      # equivalent to `eye(Main)`
   
 ```jl
 julia> eye()
-[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
  >   Module
-      Base: Module Base
-      Core: Module Core
-      InteractiveUtils: Module InteractiveUtils
-      Main: Module Main
+      Base: Module  Base
+      Core: Module  Core
+      InteractiveUtils: Module  InteractiveUtils
+      Main: Module  Main
       a: NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, S
-   +   h: Vector{Float64} [0.3610421863508626, 0.12771541533567443, 0.6201544967866688, 0.11594457518848911, 0.30579680447725
-       e: Expr 5 * sin(pi * t)
-        head: Symbol call
-        args: Vector{Any} Any[:*, 5, :(sin(pi * t))]
-         1: Symbol *
-         2: Int64 5
-         3: Expr sin(pi * t)
-          head: Symbol call
-          args: Vector{Any} Any[:sin, :(pi * t)]
-           1: Symbol sin
-           2: Expr pi * t
-            head: Symbol call
-            args: Vector{Any} Any[:*, :pi, :t]
-             1: Symbol *
-             2: Symbol pi
-             3: Symbol t
-       f: typeof(sin) sin
-   +   c: Complex{Int64} 0 + 33im
-       set: Set{Any} Set(Any[:a, [5, 2, 5, 2, 1, 1, 3, 4], 9])
-        : Symbol a
-   +    : Vector{Int64} [5, 2, 5, 2, 1, 1, 3, 4]
-        : Int64 9
-       b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}} (c = 1, d = 9, e = (i = 9,
-        c: Int64 1
-        d: Int64 9
-        e: NamedTuple{(:i, :f), Tuple{Int64, Int64}} (i = 9, f = 0)
-         i: Int64 9
-         f: Int64 0
-       x: Pair{Int64, UnitRange{Int64}} 9 => 99:109
-v       first: Int64 9
+   +   h: Vector{Float64} (5,) [0.893213, 0.120307, 0.322837, 0.0256164, 0.416702]
+       e: Expr  :(5 * sin(pi * t))
+        head: Symbol  :call
+        args: Vector{Any} (3,) Any[:*, 5, :(sin(pi * t))]
+         1: Symbol  :*
+         2: Int64  5
+         3: Expr  :(sin(pi * t))
+          head: Symbol  :call
+          args: Vector{Any} (2,) Any[:sin, :(pi * t)]
+           1: Symbol  :sin
+           2: Expr  :(pi * t)
+            head: Symbol  :call
+            args: Vector{Any} (3,) Any[:*, :pi, :t]
+             1: Symbol  :*
+             2: Symbol  :pi
+             3: Symbol  :t
+       f: typeof(sin)  sin
+   +   c: Complex{Int64}  0+33im
+       set: Set{Any}  Set(Any[:a, [5, 2, 1, 5, 3, 3, 1, 1], 9])
+        : Symbol  :a
+   +    : Vector{Int64} (8,) [5, 2, 1, 5, 3, 3, 1, 1]
+        : Int64  9
+       b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}}  (c = 1, d = 9, e = (i = 9
+        c: Int64  1
+        d: Int64  9
+        e: NamedTuple{(:i, :f), Tuple{Int64, Int64}}  (i = 9, f = 0)
+         i: Int64  9
+         f: Int64  0
+       x: Pair{Int64, UnitRange{Int64}}  9=>99:109
+v       first: Int64  9
 ```
 
 </details>
@@ -140,33 +140,33 @@ eye(Number)
   
 ```jl
 julia> eye(Number)
-[f] toggle fields [d] docs [o] open [t] typeof [q] quit
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
  >   DataType
-   +  : UnionAll Complex
-      : DataType Real
-       : DataType AbstractFloat
-   +    : DataType BigFloat
-        : DataType Float16
-        : DataType Float32
-        : DataType Float64
-       : DataType AbstractIrrational
-   +    : UnionAll Irrational
-       : DataType Integer
-        : DataType Bool
-        : DataType Signed
-   +     : DataType BigInt
-         : DataType Int128
-         : DataType Int16
-         : DataType Int32
-         : DataType Int64
-         : DataType Int8
-        : DataType Unsigned
-         : DataType UInt128
-         : DataType UInt16
-         : DataType UInt32
-         : DataType UInt64
-         : DataType UInt8
-   +   : UnionAll Rational
+   +  : UnionAll  Complex
+      : DataType  Real
+       : DataType  AbstractFloat
+   +    : DataType  BigFloat
+        : DataType  Float16
+        : DataType  Float32
+        : DataType  Float64
+       : DataType  AbstractIrrational
+   +    : UnionAll  Irrational
+       : DataType  Integer
+        : DataType  Bool
+        : DataType  Signed
+   +     : DataType  BigInt
+         : DataType  Int128
+         : DataType  Int16
+         : DataType  Int32
+         : DataType  Int64
+         : DataType  Int8
+        : DataType  Unsigned
+         : DataType  UInt128
+         : DataType  UInt16
+         : DataType  UInt32
+         : DataType  UInt64
+         : DataType  UInt8
+   +   : UnionAll  Rational
 ```
 
 </details>
