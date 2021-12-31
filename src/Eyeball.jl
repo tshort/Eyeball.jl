@@ -149,6 +149,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             fold!(node, i - 48)
+            menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         end                                                        
         return false
     end
@@ -186,7 +187,9 @@ getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
 
 function fold!(node, depth)
-    if depth == 0 && isstructtype(typeof(node.data.obj)) && shouldrecurse(node.data.obj)
+    obj = node.data.obj
+    nprop = length(getoptions(obj)) 
+    if depth == 0 && isstructtype(typeof(obj)) && shouldrecurse(obj) && nprop > 0 
         node.foldchildren = true
     else
         if !foldobject(node.data.obj)
