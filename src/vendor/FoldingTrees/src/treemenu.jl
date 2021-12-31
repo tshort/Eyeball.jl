@@ -14,7 +14,7 @@ mutable struct TreeMenu{N<:Node} <: TerminalMenus._ConfiguredMenu{TerminalMenus.
     dynamic::Bool
     maxsize::Int
     pageoffset::Int
-    keypress
+    keypress::Any
     config::TerminalMenus.Config
 end
 function TreeMenu(root; pagesize::Int=10, dynamic = false, maxsize = pagesize, keypress = (m,i) -> false, kwargs...)

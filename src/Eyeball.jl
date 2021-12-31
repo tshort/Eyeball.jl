@@ -21,8 +21,10 @@ export eye
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
-function eye(x = Main, depth = 10; interactive = true)
+function eye(x = Main, depth = 10; interactive = true, showsize = false)
     cursor = Ref(1)
+    returnfun = x -> x.data.obj
+    redo = false    
     function resetterm() 
         REPL.Terminals.clear(term)
         REPL.Terminals.raw!(term, true)
@@ -52,37 +54,85 @@ function eye(x = Main, depth = 10; interactive = true)
                 menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
             end
         elseif i == Int('d')
-            term = default_terminal()
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            pager(doc(node.data.obj))
+            pager(getdoc(node.data.obj))
             resetterm()
-        elseif i == Int('o')
-            term = default_terminal()
+        elseif i == Int('m')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            choice = eye(node.data.obj, 2)
-            menu.chosen = choice !== nothing          
+            o = node.data.obj
+            newchoice = eye(methodswith(o isa DataType ? o : typeof(o)))
+            resetterm()
+            if newchoice !== nothing
+                returnfun = x -> newchoice
+                menu.chosen = true
+                node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+                return true
+            end
+        elseif i == Int('M')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            o = node.data.obj
+            newchoice = eye(methodswith(o isa DataType ? o : typeof(o), supertypes = true))
+            resetterm()
+            if newchoice !== nothing
+                returnfun = x -> newchoice
+                menu.chosen = true
+                node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+                return true
+            end
+        elseif i == Int('o')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            newchoice = eye(node.data.obj)
+            resetterm()
+            if newchoice !== nothing
+                returnfun = x -> newchoice
+                menu.chosen = true
+                node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+                return true
+            end
+        elseif i == Int('r')
+            returnfun = identity
+            menu.chosen = true
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            return true
+        elseif i == Int('s')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            io = IOContext(IOBuffer(), :displaysize => displaysize(term), :limit => true, :color => true)
+            show(io, MIME"text/plain"(), node.data.obj)
+            sobj = String(take!(io.io))
+            pager((node.data.obj))
             resetterm()
         elseif i == Int('t')
-            term = default_terminal()
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            choice = eye(typeof(node.data.obj), 2)
-            menu.chosen = choice !== nothing          
+            choice = eye(typeof(node.data.obj))
             resetterm()
+        elseif i == Int('z')
+            showsize = !showsize
+            redo = true
+            return true
         end                                                        
         return false
     end
 
-    root = treelist(x, depth = depth - 1)
+    root = treelist(x, depth = depth - 1, showsize = showsize)
     if interactive
         term = default_terminal()
-        menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-        #cursor[] = 1
-        choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=cursor)
-        choice !== nothing && return choice.data.obj
-        return
+        while true
+            menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit", menu; cursor=cursor)
+            choice !== nothing && return returnfun(choice)
+            if redo
+                redo = false
+                root = treelist(x, depth = depth - 1, showsize = showsize)
+            else 
+                return
+            end
+        end
     else
         menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = keypress)
         return root
@@ -98,6 +148,8 @@ ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
+getdoc(x) = doc(x)
+getdoc(x::Method) = doc(x.module.eval(x.name))
 
 # from https://github.com/MichaelHatherly/InteractiveErrors.jl/blob/5e2e90f9636d748aa3aae0887e18df388829b8e7/src/InteractiveErrors.jl#L52-L61
 function style(str; kws...)
@@ -111,12 +163,12 @@ function style(str; kws...)
 end
 
 
-function treelist(x; depth = 0, parent = Node(ObjectWrapper(x, style(typeof(x), color = :yellow))), history = Base.IdSet{Any}((x,)))
+function treelist(x; depth = 0, parent = Node(ObjectWrapper(x, style(typeof(x), color = :yellow))), history = Base.IdSet{Any}((x,)), showsize = false)
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
     opts = usefields ? getfields(x) : getoptions(x)
     for (pn, obj) in opts
         nprop = length(getoptions(obj)) 
-        node = Node(ObjectWrapper(obj, tostring(pn, obj)), 
+        node = Node(ObjectWrapper(obj, tostring(pn, obj, showsize = showsize)), 
                     parent, 
                     foldobject(obj) || (depth < 1 && nprop > 0 && shouldrecurse(obj)))
         if nprop > 0 && depth > -20 && obj ∉ history && shouldrecurse(obj, nprop)
@@ -130,9 +182,19 @@ function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; w
     FoldingTrees.writeoption(buf, obj.str, charsused; width=width)
 end
 
-function tostring(pn, obj)
-    string(style(pn, color = :cyan), ": ", style(typeof(obj), color = :green), " ", obj)
+function tostring(pn, obj; showsize = false)
+    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
+    show(io, obj)
+    sobj = String(take!(io.io))
+    string(style(pn, color = :cyan), ": ", 
+           style(typeof(obj), color = :green), " ", 
+           style(extras(obj), color = :magenta), " ", 
+           showsize ? string(style(sizeof(obj), color = :yellow), " ") : "",
+           sobj)
 end
+
+extras(x) = ""
+extras(x::AbstractArray) = string(size(x))
 
 function getfields(x::T) where T
     res = Any[]
@@ -180,6 +242,7 @@ function getoptions(x::DataType)
     return res
 end
 function getoptions(x::AbstractArray)
+    length(x) > 500 && return []
     res = Any[]
     for i in eachindex(x)
         try
@@ -221,7 +284,7 @@ shouldrecurse(x::DataType, len) = x !== Any && x !== Function && !iscorejunk(x)
 shouldrecurse(::Union, len) = false
 
 foldobject(x) = false
-foldobject(::AbstractArray) = true
+foldobject(x::AbstractArray) = length(x) <= 500
 foldobject(x::AbstractVector{Any}) = length(x) > 5
 foldobject(::UnitRange) = true
 foldobject(x::Number) = isstructtype(typeof(x))

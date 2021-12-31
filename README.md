@@ -9,21 +9,25 @@ Eyeball exports one main tool to browse Julia objects and types.
 ```julia
 eye(object)
 eye(object, depth)
-eye(object = Main, depth = 10; interactive = true)
+eye(object = Main, depth = 10; interactive = true, showsize = false)
 ```
 
-`depth` controls the depth of folding. 
+`depth` controls the depth of folding. `showsize` controls whether the size of objects is shown.
 
 The user can interactively browse the object tree using the following keys:
 
-* `↑↓ ← →` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree. Vim movement keys (`h j k l`) are also supported.
+* `↑` `↓` `←` `→` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree. Vim movement keys (`h` `j` `k` `l`) are also supported.
 * `f` -- Toggle fields. By default, parameters are shown for most objects.
   `f` toggles between the normal view and a view showing the fields of an object.
 * `d` -- Docs. Show documentation on the object.
+* `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
 * `o` -- Open. Open the object in a new tree view.
+* `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
+* `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
+* `z` -- Size. Toggle showing size of objects.
 * `enter` -- Return the object.
-* `q` -- Quit
+* `q` -- Quit.
 
 ## Examples
 
