@@ -18,16 +18,68 @@ using .FoldingTrees
 
 export eye
 
-global cursor = Ref(1)
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
 function eye(x = Main, depth = 10; interactive = true)
+    cursor = Ref(1)
+    function resetterm() 
+        REPL.Terminals.clear(term)
+        REPL.Terminals.raw!(term, true)
+        print(term.out_stream, "\x1b[?25l")  # hide cursor
+    end
+    function keypress(menu::TreeMenu, i::UInt32) 
+        if i == Int('j')
+            cursor[] = TerminalMenus.move_down!(menu, cursor[])
+        elseif i == Int('k')
+            cursor[] = TerminalMenus.move_up!(menu, cursor[])
+        elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
+            node.foldchildren = false                 
+            menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
+        elseif i == Int('h') || i == Int(TerminalMenus.ARROW_LEFT)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
+            node.foldchildren = true && isstructtype(typeof(node.data.obj)) && shouldrecurse(node.data.obj)
+            menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
+        elseif i == Int('f')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            o = node.data.obj
+            if isstructtype(typeof(o))
+                node.children = Node[]
+                node.data.showfields[] = !node.data.showfields[]
+                treelist(o, parent = node) 
+                node.foldchildren = false
+                menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
+            end
+        elseif i == Int('d')
+            term = default_terminal()
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            pager(doc(node.data.obj))
+            resetterm()
+        elseif i == Int('o')
+            term = default_terminal()
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            choice = eye(node.data.obj, 2)
+            menu.chosen = choice !== nothing          
+            resetterm()
+        elseif i == Int('t')
+            term = default_terminal()
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            choice = eye(typeof(node.data.obj), 2)
+            menu.chosen = choice !== nothing          
+            resetterm()
+        end                                                        
+        return false
+    end
+
     root = treelist(x, depth = depth - 1)
     if interactive
         term = default_terminal()
-        menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, maxsize = 30, keypress = keypress)
-        cursor[] = 1
+        menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
+        #cursor[] = 1
         choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=cursor)
         choice !== nothing && return choice.data.obj
         return
@@ -176,56 +228,17 @@ foldobject(x::Number) = isstructtype(typeof(x))
 foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x) && shouldrecurse(x)
 foldobject(x::UnionAll) = true
 
-function keypress(menu::TreeMenu, i::UInt32) 
-    if i == Int('r')            
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-        menu.chosen = true          
-        return true
-    elseif i == Int('j')
-        cursor[] = TerminalMenus.move_down!(menu, cursor[])
-    elseif i == Int('k')
-        cursor[] = TerminalMenus.move_up!(menu, cursor[])
-    elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-        node.foldchildren = false                 
-        menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
-    elseif i == Int('h') || i == Int(TerminalMenus.ARROW_LEFT)
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-        node.foldchildren = true && isstructtype(typeof(node.data.obj)) && shouldrecurse(node.data.obj)
-        menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
-    elseif i == Int('f')
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-        o = node.data.obj
-        if isstructtype(typeof(o))
-            node.children = Node[]
-            node.data.showfields[] = !node.data.showfields[]
-            treelist(o, parent = node) 
-            node.foldchildren = false
-            menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
-        end
-    elseif i == Int('d')
-        term = default_terminal()
-        REPL.Terminals.clear(term)
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-        show(doc(node.data.obj))
-        return true
-    elseif i == Int('o')
-        term = default_terminal()
-        REPL.Terminals.clear(term)
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-        choice = eye(node.data.obj, 2)
-        menu.chosen = choice !== nothing          
-        return true
-    elseif i == Int('t')
-        term = default_terminal()
-        REPL.Terminals.clear(term)
-        node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-        choice = eye(typeof(node.data.obj), 2)
-        menu.chosen = choice !== nothing          
-        return true
-    end                                                        
-    return false
-end
 
+# adapted from: https://github.com/JuliaLang/julia/blob/7c8cbf68865c7a8080a43321c99e07224f614e69/stdlib/REPL/src/TerminalMenus/Pager.jl#L33-L42
+function pager(terminal, object)
+    lines, columns = displaysize(terminal)::Tuple{Int,Int}
+    columns -= 3
+    buffer = IOBuffer()
+    ctx = IOContext(buffer, :color => REPL.Terminals.hascolor(terminal), :displaysize => (lines, columns))
+    show(ctx, "text/plain", object)
+    pager = Pager(String(take!(buffer)); pagesize = lines)
+    return request(terminal, pager)
+end
+pager(object) = pager(TerminalMenus.terminal, object)
 
 end
