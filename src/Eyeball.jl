@@ -9,6 +9,7 @@ using REPL: REPL, AbstractTerminal
 
 using REPL.TerminalMenus
 import REPL.TerminalMenus: request
+using AbstractTrees
 
 # TODO: de-vendor once changes are upstreamed.
 include("vendor/FoldingTrees/src/FoldingTrees.jl")
@@ -32,15 +33,16 @@ With `interactive` set to `false`, `eye` returns the tree as a `FoldingTrees.Nod
 During interactive browsing of the object tree, the following keys are available:
 
 * `↑` `↓` `←` `→` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree. Vim movement keys (`h` `j` `k` `l`) are also supported.
+* `d` -- Docs. Show documentation on the object.
 * `f` -- Toggle fields. By default, parameters are shown for most objects.
   `f` toggles between the normal view and a view showing the fields of an object.
-* `d` -- Docs. Show documentation on the object.
 * `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
 * `o` -- Open. Open the object in a new tree view.
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Size. Toggle showing size of objects.
+* `0`-`9` -- Fold to depth.
 * `enter` -- Return the object.
 * `q` -- Quit.
 """
@@ -60,7 +62,13 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             cursor[] = TerminalMenus.move_up!(menu, cursor[])
         elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-            node.foldchildren = false                 
+            if  node.foldchildren
+                node.foldchildren = false                 
+            else
+                for child in AbstractTrees.children(node)
+                    child.foldchildren = foldobject(child.data.obj)                 
+                end
+            end
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('h') || i == Int(TerminalMenus.ARROW_LEFT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
@@ -138,6 +146,9 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             showsize = !showsize
             redo = true
             return true
+        elseif i in Int.('0':'9')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            fold!(node, i - 48)
         end                                                        
         return false
     end
@@ -173,6 +184,19 @@ Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
 getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
+
+function fold!(node, depth)
+    if depth == 0 && isstructtype(typeof(node.data.obj)) && shouldrecurse(node.data.obj)
+        node.foldchildren = true
+    else
+        if !foldobject(node.data.obj)
+            node.foldchildren = false
+            for child in AbstractTrees.children(node)
+                fold!(child, depth - 1)
+            end 
+        end 
+    end 
+end 
 
 # from https://github.com/MichaelHatherly/InteractiveErrors.jl/blob/5e2e90f9636d748aa3aae0887e18df388829b8e7/src/InteractiveErrors.jl#L52-L61
 function style(str; kws...)
