@@ -22,6 +22,7 @@ The user can interactively browse the object tree using the following keys:
 * `d` -- Docs. Show documentation on the object.
 * `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
 * `o` -- Open. Open the object in a new tree view.
+* `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `enter` -- Return the object.
 * `q` -- Quit.
