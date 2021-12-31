@@ -23,6 +23,7 @@ default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
 function eye(x = Main, depth = 10; interactive = true)
     cursor = Ref(1)
+    returnfun = Ref(identity)
     function resetterm() 
         REPL.Terminals.clear(term)
         REPL.Terminals.raw!(term, true)
@@ -52,24 +53,31 @@ function eye(x = Main, depth = 10; interactive = true)
                 menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
             end
         elseif i == Int('d')
-            term = default_terminal()
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             pager(doc(node.data.obj))
             resetterm()
-        elseif i == Int('o')
-            term = default_terminal()
+        elseif i == Int('m')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            choice = eye(node.data.obj, 2)
-            menu.chosen = choice !== nothing          
+            o = node.data.obj
+            choice = eye(methodswith(o isa DataType ? o : typeof(o)))
+            resetterm()
+        elseif i == Int('M')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            o = node.data.obj
+            choice = eye(methodswith(o isa DataType ? o : typeof(o), supertypes = true))
+            resetterm()
+        elseif i == Int('o')
+            REPL.Terminals.clear(term)
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            choice = eye(node.data.obj)
             resetterm()
         elseif i == Int('t')
-            term = default_terminal()
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            choice = eye(typeof(node.data.obj), 2)
-            menu.chosen = choice !== nothing          
+            choice = eye(typeof(node.data.obj))
             resetterm()
         end                                                        
         return false
@@ -80,8 +88,8 @@ function eye(x = Main, depth = 10; interactive = true)
         term = default_terminal()
         menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
         #cursor[] = 1
-        choice = TerminalMenus.request(term, "[f] toggle fields [d] docs [o] open [t] typeof [q] quit", menu; cursor=cursor)
-        choice !== nothing && return choice.data.obj
+        choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [t] typeof [q] quit", menu; cursor=cursor)
+        choice !== nothing && return returnfun[](choice.data.obj)
         return
     else
         menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = keypress)
