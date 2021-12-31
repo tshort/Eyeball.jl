@@ -23,7 +23,7 @@ default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 
 function eye(x = Main, depth = 10; interactive = true)
     cursor = Ref(1)
-    returnfun = Ref{Any}(x -> x.data.obj)
+    returnfun = x -> x.data.obj
     function resetterm() 
         REPL.Terminals.clear(term)
         REPL.Terminals.raw!(term, true)
@@ -64,7 +64,7 @@ function eye(x = Main, depth = 10; interactive = true)
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o)))
             resetterm()
             if newchoice !== nothing
-                returnfun[] = x -> newchoice
+                returnfun = x -> newchoice
                 menu.chosen = true
                 node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
                 return true
@@ -76,7 +76,7 @@ function eye(x = Main, depth = 10; interactive = true)
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o), supertypes = true))
             resetterm()
             if newchoice !== nothing
-                returnfun[] = x -> newchoice
+                returnfun = x -> newchoice
                 menu.chosen = true
                 node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
                 return true
@@ -87,13 +87,13 @@ function eye(x = Main, depth = 10; interactive = true)
             newchoice = eye(node.data.obj)
             resetterm()
             if newchoice !== nothing
-                returnfun[] = x -> newchoice
+                returnfun = x -> newchoice
                 menu.chosen = true
                 node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
                 return true
             end
         elseif i == Int('r')
-            returnfun[] = identity
+            returnfun = identity
             menu.chosen = true
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             return true
@@ -111,7 +111,7 @@ function eye(x = Main, depth = 10; interactive = true)
         term = default_terminal()
         menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
         choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [t] typeof [q] quit", menu; cursor=cursor)
-        choice !== nothing && return returnfun[](choice)
+        choice !== nothing && return returnfun(choice)
         return
     else
         menu = TreeMenu(root, pagesize = 20, dynamic = true, maxsize = 30, keypress = keypress)
