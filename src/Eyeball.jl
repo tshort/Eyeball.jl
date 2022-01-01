@@ -239,18 +239,6 @@ function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; w
     FoldingTrees.writeoption(buf, obj.str, charsused; width=width)
 end
 
-# # adapted from: https://github.com/JuliaLang/julia/blob/7c8cbf68865c7a8080a43321c99e07224f614e69/stdlib/REPL/src/TerminalMenus/Pager.jl#L33-L42
-# function pager(terminal, object)
-#     lines, columns = displaysize(terminal)::Tuple{Int,Int}
-#     columns -= 3
-#     buffer = IOBuffer()
-#     ctx = IOContext(buffer, :color => REPL.Terminals.hascolor(terminal), :displaysize => (lines, columns))
-#     show(ctx, "text/plain", object)
-#     pager = TerminalMenus.Pager(String(take!(buffer)); pagesize = lines)
-#     return request(terminal, pager)
-# end
-# pager(object) = pager(TerminalMenus.terminal, object)
-
 function _pager(object)
      buffer = IOBuffer()
      ctx = IOContext(buffer, :color => true)
