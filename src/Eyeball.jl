@@ -399,11 +399,11 @@ This is useful for types where the components are usually not needed.
 This defaults to false.
 """
 foldobject(x) = false
-foldobject(x::AbstractArray) = length(x) <= 500
+foldobject(x::AbstractArray) = true
 foldobject(x::AbstractVector{Any}) = length(x) > 5
 foldobject(::UnitRange) = true
-foldobject(x::Number) = isstructtype(typeof(x))
-foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x) && shouldrecurse(x)
+foldobject(x::Number) = true
+foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x)
 foldobject(x::UnionAll) = true
 
 end
