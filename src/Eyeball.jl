@@ -286,8 +286,10 @@ extras(x::AbstractArray) = string(size(x))
 ```
 getfields(x)
 ```
-Return an array of Pairs describing the objects to be shown. 
+Return an array of Pairs describing the objects to be shown when fields are selected. 
 The first component of the Pair is the key or index of the object, and the second component is the object.
+Normally, this should not have a custom definition for a type.
+Use `getoptions` for that.
 """
 function getfields(x::T) where T
     res = Any[]
@@ -301,6 +303,14 @@ function getfields(x::T) where T
     end
     return res
 end
+
+"""
+```
+getoptions(x)
+```
+Return an array of Pairs describing the child objects to be shown for `x`. 
+The first component of the Pair is the key or index of the child object, and the second component is the child object.
+"""
 function getoptions(x::T) where T
     res = Any[]
     !isstructtype(T) && return res
