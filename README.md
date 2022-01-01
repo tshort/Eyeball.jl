@@ -245,6 +245,7 @@ This defaults to `false`.
 `Eyeball` uses [FoldingTrees](https://github.com/JuliaCollections/FoldingTrees.jl) for display of trees and interactivity.
 [This fork](https://github.com/MichaelHatherly/InteractiveErrors.jl/tree/master/src/vendor/FoldingTrees)
 was extended to support customized key presses.
+[TerminalPager](https://github.com/ronisbr/TerminalPager.jl) is used for paging.
 
 The code was adapted from [InteractiveErrors.jl](https://github.com/MichaelHatherly/InteractiveErrors.jl)
  and [Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl).

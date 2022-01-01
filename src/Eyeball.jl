@@ -11,6 +11,8 @@ using REPL.TerminalMenus
 import REPL.TerminalMenus: request
 using AbstractTrees
 
+import TerminalPager
+
 # TODO: de-vendor once changes are upstreamed.
 include("vendor/FoldingTrees/src/FoldingTrees.jl")
 using .FoldingTrees
@@ -87,7 +89,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         elseif i == Int('d')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            pager(getdoc(node.data.obj))
+            _pager(getdoc(node.data.obj))
             resetterm()
         elseif i == Int('m')
             REPL.Terminals.clear(term)
@@ -135,7 +137,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             io = IOContext(IOBuffer(), :displaysize => displaysize(term), :limit => true, :color => true)
             show(io, MIME"text/plain"(), node.data.obj)
             sobj = String(take!(io.io))
-            pager((node.data.obj))
+            _pager(node.data.obj)
             resetterm()
         elseif i == Int('t')
             REPL.Terminals.clear(term)
@@ -237,17 +239,12 @@ function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; w
     FoldingTrees.writeoption(buf, obj.str, charsused; width=width)
 end
 
-# adapted from: https://github.com/JuliaLang/julia/blob/7c8cbf68865c7a8080a43321c99e07224f614e69/stdlib/REPL/src/TerminalMenus/Pager.jl#L33-L42
-function pager(terminal, object)
-    lines, columns = displaysize(terminal)::Tuple{Int,Int}
-    columns -= 3
-    buffer = IOBuffer()
-    ctx = IOContext(buffer, :color => REPL.Terminals.hascolor(terminal), :displaysize => (lines, columns))
-    show(ctx, "text/plain", object)
-    pager = Pager(String(take!(buffer)); pagesize = lines)
-    return request(terminal, pager)
+function _pager(object)
+     buffer = IOBuffer()
+     ctx = IOContext(buffer, :color => true)
+     show(ctx, "text/plain", object)
+     TerminalPager.pager(String(take!(buffer)))
 end
-pager(object) = pager(TerminalMenus.terminal, object)
 
 ############################
 #  API functions
