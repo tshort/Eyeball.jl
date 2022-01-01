@@ -176,12 +176,14 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
     end
 end
 
-struct ObjectWrapper
-    obj
-    str
-    showfields
+struct ObjectWrapper{O}
+    obj::O
+    str::String
+    showfields::Base.RefValue{Bool}
+    ObjectWrapper{O}(obj, str) where O = new(obj, str, Ref(false))
 end
-ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
+#ObjectWrapper(obj, str, showfields) = ObjectWrapper{typeof(obj)}(obj, str, showfields)
+#ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
@@ -217,12 +219,12 @@ function style(str; kws...)
 end
 
 
-function treelist(x; depth = 0, parent = Node(ObjectWrapper(x, style(typeof(x), color = :yellow))), history = Base.IdSet{Any}((x,)), showsize = false)
+function treelist(x; depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{typeof(x)}(x, style(typeof(x), color = :yellow))), history = Base.IdSet{Any}((x,)), showsize = false)
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
     opts = usefields ? getfields(x) : getoptions(x)
     for (pn, obj) in opts
         nprop = length(getoptions(obj)) 
-        node = Node(ObjectWrapper(obj, tostring(pn, obj, showsize = showsize)), 
+        node = Node{ObjectWrapper}(ObjectWrapper{typeof(obj)}(obj, tostring(pn, obj, showsize = showsize)), 
                     parent, 
                     foldobject(obj) || (depth < 1 && nprop > 0 && shouldrecurse(obj)))
         if nprop > 0 && depth > -20 && obj ∉ history && shouldrecurse(obj, nprop)
