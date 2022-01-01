@@ -364,7 +364,7 @@ function getoptions(x::AbstractDict)
     res = Any[]
     for (k,v) in x
         push!(res, :k => k)
-        push!(res, " v" => v)
+        push!(res, "_v" => v)
     end
     return res
 end
