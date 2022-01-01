@@ -62,7 +62,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             cursor[] = TerminalMenus.move_up!(menu, cursor[])
         elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-            if  node.foldchildren
+            if node.foldchildren
                 node.foldchildren = false                 
             else
                 for child in AbstractTrees.children(node)
@@ -72,7 +72,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('h') || i == Int(TerminalMenus.ARROW_LEFT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-            node.foldchildren = true && isstructtype(typeof(node.data.obj)) && shouldrecurse(node.data.obj)
+            node.foldchildren = has_children(node)
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('f')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
@@ -186,13 +186,15 @@ Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
 
+has_children(x) = length(x.children) > 0
+
 function fold!(node, depth)
-    obj = node.data.obj
-    nprop = length(getoptions(obj)) 
-    if depth == 0 && isstructtype(typeof(obj)) && shouldrecurse(obj) && nprop > 0 
-        node.foldchildren = true
+    if depth == 0
+        node.foldchildren = has_children(node)
     else
-        if !foldobject(node.data.obj)
+        if foldobject(node.data.obj)
+            node.foldchildren = has_children(node)
+        else
             node.foldchildren = false
             for child in AbstractTrees.children(node)
                 fold!(child, depth - 1)
@@ -223,6 +225,9 @@ function treelist(x; depth = 0, parent = Node(ObjectWrapper(x, style(typeof(x), 
                     foldobject(obj) || (depth < 1 && nprop > 0 && shouldrecurse(obj)))
         if nprop > 0 && depth > -20 && obj ∉ history && shouldrecurse(obj, nprop)
             treelist(obj, depth = depth - 1, parent = node, history = push!(copy(history), obj))
+        end
+        if !has_children(node)
+            node.foldchildren = false
         end
     end
     return parent
