@@ -50,7 +50,7 @@ During interactive browsing of the object tree, the following keys are available
 """
 function eye(x = Main, depth = 10; interactive = true, showsize = false)
     cursor = Ref(1)
-    returnfun = x -> x.data.obj
+    returnfun = x -> x.data.value
     redo = false    
     function resetterm() 
         REPL.Terminals.clear(term)
@@ -68,7 +68,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
                 node.foldchildren = false                 
             else
                 for child in AbstractTrees.children(node)
-                    child.foldchildren = foldobject(child.data.obj)                 
+                    child.foldchildren = foldobject(child.data.value)                 
                 end
             end
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
@@ -78,7 +78,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('f')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            o = node.data.obj
+            o = node.data.value
             if isstructtype(typeof(o))
                 node.children = Node[]
                 node.data.showfields[] = !node.data.showfields[]
@@ -89,12 +89,12 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         elseif i == Int('d')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            _pager(getdoc(node.data.obj))
+            _pager(getdoc(node.data.value))
             resetterm()
         elseif i == Int('m')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            o = node.data.obj
+            o = node.data.value
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o)))
             resetterm()
             if newchoice !== nothing
@@ -106,7 +106,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         elseif i == Int('M')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            o = node.data.obj
+            o = node.data.value
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o), supertypes = true))
             resetterm()
             if newchoice !== nothing
@@ -118,7 +118,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         elseif i == Int('o')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            newchoice = eye(node.data.obj)
+            newchoice = eye(node.data.value)
             resetterm()
             if newchoice !== nothing
                 returnfun = x -> newchoice
@@ -135,14 +135,14 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             io = IOContext(IOBuffer(), :displaysize => displaysize(term), :limit => true, :color => true)
-            show(io, MIME"text/plain"(), node.data.obj)
+            show(io, MIME"text/plain"(), node.data.value)
             sobj = String(take!(io.io))
-            _pager(node.data.obj)
+            _pager(node.data.value)
             resetterm()
         elseif i == Int('t')
             REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            choice = eye(typeof(node.data.obj))
+            choice = eye(typeof(node.data.value))
             resetterm()
         elseif i == Int('z')
             showsize = !showsize
@@ -176,14 +176,12 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
     end
 end
 
-struct ObjectWrapper{O}
-    obj::O
-    str::String
+struct ObjectWrapper{K,V}
+    key::K
+    value::V
     showfields::Base.RefValue{Bool}
-    ObjectWrapper{O}(obj, str) where O = new(obj, str, Ref(false))
+    ObjectWrapper{K,V}(key, value) where {K,V} = new(key, value, Ref(false))
 end
-#ObjectWrapper(obj, str, showfields) = ObjectWrapper{typeof(obj)}(obj, str, showfields)
-#ObjectWrapper(obj, str) = ObjectWrapper(obj, str, Ref(false))
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
 
@@ -196,7 +194,7 @@ function fold!(node, depth)
     if depth == 0
         node.foldchildren = has_children(node)
     else
-        if foldobject(node.data.obj)
+        if foldobject(node.data.value)
             node.foldchildren = has_children(node)
         else
             node.foldchildren = false
@@ -219,12 +217,12 @@ function style(str; kws...)
 end
 
 
-function treelist(x; depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{typeof(x)}(x, style(typeof(x), color = :yellow))), history = Base.IdSet{Any}((x,)), showsize = false)
+function treelist(x; depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)), showsize = false)
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
     opts = usefields ? getfields(x) : getoptions(x)
     for (pn, obj) in opts
         nprop = length(getoptions(obj)) 
-        node = Node{ObjectWrapper}(ObjectWrapper{typeof(obj)}(obj, tostring(pn, obj, showsize = showsize)), 
+        node = Node{ObjectWrapper}(ObjectWrapper{typeof(pn),typeof(obj)}(pn, obj), 
                     parent, 
                     foldobject(obj) || (depth < 1 && nprop > 0 && shouldrecurse(obj)))
         if nprop > 0 && depth > -20 && obj ∉ history && shouldrecurse(obj, nprop)
@@ -238,7 +236,7 @@ function treelist(x; depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{typeo
 end
 
 function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; width::Int=(displaysize(stdout)::Tuple{Int,Int})[2])
-    FoldingTrees.writeoption(buf, obj.str, charsused; width=width)
+    FoldingTrees.writeoption(buf, tostring(obj.key, obj.value), charsused; width=width)
 end
 
 function _pager(object)
@@ -259,11 +257,11 @@ tostring(pn, obj; showsize = false)
 Returns a string with the text representation of `obj` with key `pn`.
 `showsize` controls whether the size of the object is included.
 """
-function tostring(pn, obj; showsize = false)
+function tostring(key, obj; showsize = false)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
     show(io, obj)
     sobj = String(take!(io.io))
-    string(style(pn, color = :cyan), ": ", 
+    string(style(key, color = :cyan), ": ", 
            style(typeof(obj), color = :green), " ", 
            style(extras(obj), color = :magenta), " ", 
            showsize ? string(style(sizeof(obj), color = :yellow), " ") : "",
