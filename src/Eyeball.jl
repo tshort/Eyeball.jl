@@ -237,6 +237,29 @@ function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; w
     FoldingTrees.writeoption(buf, obj.str, charsused; width=width)
 end
 
+# adapted from: https://github.com/JuliaLang/julia/blob/7c8cbf68865c7a8080a43321c99e07224f614e69/stdlib/REPL/src/TerminalMenus/Pager.jl#L33-L42
+function pager(terminal, object)
+    lines, columns = displaysize(terminal)::Tuple{Int,Int}
+    columns -= 3
+    buffer = IOBuffer()
+    ctx = IOContext(buffer, :color => REPL.Terminals.hascolor(terminal), :displaysize => (lines, columns))
+    show(ctx, "text/plain", object)
+    pager = Pager(String(take!(buffer)); pagesize = lines)
+    return request(terminal, pager)
+end
+pager(object) = pager(TerminalMenus.terminal, object)
+
+############################
+#  API functions
+############################
+
+"""
+```
+tostring(pn, obj; showsize = false)
+```
+Returns a string with the text representation of `obj` with key `pn`.
+`showsize` controls whether the size of the object is included.
+"""
 function tostring(pn, obj; showsize = false)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
     show(io, obj)
@@ -248,9 +271,24 @@ function tostring(pn, obj; showsize = false)
            sobj)
 end
 
+
+"""
+```
+extras(x) = ""
+```
+Returns a string with any extra information about `x`.
+For AbstractArrays, this returns size information.
+"""
 extras(x) = ""
 extras(x::AbstractArray) = string(size(x))
 
+"""
+```
+getfields(x)
+```
+Return an array of Pairs describing the objects to be shown. 
+The first component of the Pair is the key or index of the object, and the second component is the object.
+"""
 function getfields(x::T) where T
     res = Any[]
     !isstructtype(T) && return res
@@ -330,14 +368,29 @@ end
 
 iscorejunk(x) = parentmodule(parentmodule(parentmodule(x))) === Core && !isabstracttype(x) && isstructtype(x)
 
-shouldrecurse(x, len) = len < 30
-shouldrecurse(x) = shouldrecurse(x, 5)
+"""
+```
+shouldrecurse(x, len = 5)
+```
+A boolean that controls whether eye recurses into object `x`. 
+`len` is the length of the object. 
+This defaults to true when `len < 30`.
+"""
+shouldrecurse(x, len = 5) = len < 30
 shouldrecurse(::Module, len) = false
 shouldrecurse(::Method, len) = false
 shouldrecurse(::TypeVar, len) = false
 shouldrecurse(x::DataType, len) = x !== Any && x !== Function && !iscorejunk(x)
 shouldrecurse(::Union, len) = false
 
+"""
+```
+foldobject(x)
+```
+A boolean that controls whether `eye` automatically folds `x`. 
+This is useful for types where the components are usually not needed. 
+This defaults to false.
+"""
 foldobject(x) = false
 foldobject(x::AbstractArray) = length(x) <= 500
 foldobject(x::AbstractVector{Any}) = length(x) > 5
@@ -345,18 +398,5 @@ foldobject(::UnitRange) = true
 foldobject(x::Number) = isstructtype(typeof(x))
 foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x) && shouldrecurse(x)
 foldobject(x::UnionAll) = true
-
-
-# adapted from: https://github.com/JuliaLang/julia/blob/7c8cbf68865c7a8080a43321c99e07224f614e69/stdlib/REPL/src/TerminalMenus/Pager.jl#L33-L42
-function pager(terminal, object)
-    lines, columns = displaysize(terminal)::Tuple{Int,Int}
-    columns -= 3
-    buffer = IOBuffer()
-    ctx = IOContext(buffer, :color => REPL.Terminals.hascolor(terminal), :displaysize => (lines, columns))
-    show(ctx, "text/plain", object)
-    pager = Pager(String(take!(buffer)); pagesize = lines)
-    return request(terminal, pager)
-end
-pager(object) = pager(TerminalMenus.terminal, object)
 
 end
