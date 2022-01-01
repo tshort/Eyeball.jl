@@ -11,6 +11,7 @@ TerminalPager = "0c614874-6106-40ed-a7c2-2f1cd0bff883"
 
 [compat]
 AbstractTrees = "0.3.4"
+TerminalPager= "0.2.2"
 julia = "1.6"
 
 [extras]
