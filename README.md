@@ -9,10 +9,10 @@ Eyeball exports one main tool to browse Julia objects and types.
 ```julia
 eye(object)
 eye(object, depth)
-eye(object = Main, depth = 10; interactive = true, showsize = false)
+eye(object = Main, depth = 10; interactive = true)
 ```
 
-`depth` controls the depth of folding. `showsize` controls whether the size of objects is shown.
+`depth` controls the depth of folding.
 
 The user can interactively browse the object tree using the following keys:
 
@@ -25,10 +25,15 @@ The user can interactively browse the object tree using the following keys:
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
-* `z` -- Size. Toggle showing size of objects.
 * `0`-`9` -- Fold to depth.
 * `enter` -- Return the object.
 * `q` -- Quit.
+
+Notes:
+
+* Arrays longer than 100 elements only have the first 100 elements shown when unfolded.
+* Some types are left folded by default (numbers, typed arrays, ...).
+* Some types are not recursed into. This includes modules. You can use `o` to open these in a new tree view.
 
 ## Examples
 
@@ -40,8 +45,8 @@ eye(a)
 ```
 ```jl
 julia> eye(a)
-[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
- >   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof
+>   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
    +  h: Vector{Float64} (5,) [0.893213, 0.120307, 0.322837, 0.0256164, 0.416702]
       e: Expr  :(5 * sin(pi * t))
        head: Symbol  :call
@@ -90,7 +95,7 @@ eye()      # equivalent to `eye(Main)`
   
 ```jl
 julia> eye()
-[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit
  >   Module
       Base: Module  Base
       Core: Module  Core
@@ -141,7 +146,7 @@ eye(Number)
   
 ```jl
 julia> eye(Number)
-[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit
  >   DataType
    +  : UnionAll  Complex
       : DataType  Real
@@ -221,19 +226,18 @@ By default, `eye` shows the properties of an object.
 That can be customized for different objects.
 For example, `Dict`s are shown with the key then the value, and abstract types are shown with subtypes.
 To customize what's shown for `SomeType`, define `Eyeball.getobjects(x::SomeType)`.
-This method should return an array of `Pair`s describing the objects to be shown.
-The first component of the `Pair` is the key or index of the object, and the second component is the object.
+This method should return two arrays, the keys and values describing the objects to be shown.
+The first array has the keys or indexes of the object, and the second component is the child objects.
 
 The display of objects can also be customized with the following boolean methods:
 
 ```julia
-Eyeball.shouldrecurse(x, len)   
+Eyeball.shouldrecurse(x)   
 Eyeball.foldobject(x)   
 ```
 
-`shouldrecurse` controls whether `eye` recurses into the object.
-`x` is the object. `len` is the length of the object. 
-This defaults to `true` when `len < 30`.
+`shouldrecurse` controls whether `eye` recurses into object `x`.
+This defaults to `true`.
 For overly large or complex objects, it helps to return `false`.
 That's done internally for `Module`s, `Method`s, and a few other types.
 `foldobject` controls whether `eye` automatically folds the object.
