@@ -31,7 +31,7 @@ The user can interactively browse the object tree using the following keys:
 
 Notes:
 
-* Arrays longer than 50 elements only have the first 50 elements shown when unfolded.
+* Arrays longer than 100 elements only have the first 100 elements shown when unfolded.
 * Some types are left folded by default (numbers, typed arrays, ...).
 * Some types are not recursed into. This includes modules. You can use `o` to open these in a new tree view.
 

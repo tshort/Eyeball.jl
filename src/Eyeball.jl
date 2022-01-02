@@ -320,7 +320,7 @@ function getoptions(x::DataType)
     return (fields, fieldtypes)
 end
 function getoptions(x::AbstractArray{T}) where T
-    keys = 1:min(50, length(x))
+    keys = 1:min(100, length(x))
     return (keys, x)
 end
 function getoptions(x::AbstractDict{<:S, T}) where {S<:Union{AbstractString, Symbol, Number},T}
