@@ -63,13 +63,7 @@ function eye(x = Main, depth = 10; interactive = true)
             cursor[] = TerminalMenus.move_up!(menu, cursor[])
         elseif i == Int('l') || i == Int(TerminalMenus.ARROW_RIGHT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
-            if node.foldchildren
-                node.foldchildren = false                 
-            else
-                for child in AbstractTrees.children(node)
-                    child.foldchildren = foldobject(child.data.value)                 
-                end
-            end
+            node.foldchildren = false                 
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('h') || i == Int(TerminalMenus.ARROW_LEFT)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)               
