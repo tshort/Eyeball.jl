@@ -32,7 +32,7 @@ end
     foreach(unfold!, nodes(root))
     FoldingTrees.print_tree(io, root)
     s = String(take!(io))
-    @test s[1:100] == "  \e[33mNamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof("
+    @test s[1:100] == "  : \e[32mNamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeo"
     root = eye(a, 2, interactive = false)
     @test count_open_leaves(root) == 30
     root = eye(a, interactive = false)
@@ -51,7 +51,7 @@ end
     str = String(take!(io))
     nback, lines = linesplitter(str)
     @test nback == 0
-    @test lines[2] == " > +  \e[36mh\e[39m: \e[32mVector{Float64}\e[39m \e[35m(5,)\e[39m [0.0, 0.0, 0.0, 0.0, 0.0]"
+    @test lines[2] == " > +  \e[36mh\e[39m: \e[32mVector{Float64}\e[39m \e[35m(5,)\e[39m \e[33m40\e[39m [0.0, 0.0, 0.0, 0.0, 0.0]"
     @test lines[8] == "   +  \e[36mx\e[39m: \e[32mPair{Int64, UnitRange{Int64}}\e[39m  9=>99:109"
     @test length(lines) == 11
     menu.cursoridx = 11

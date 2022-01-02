@@ -257,8 +257,7 @@ function tostring(key, obj)
     sobj = String(take!(io.io))
     string(style(string(key), color = :cyan), ": ", 
            style(string(typeof(obj)), color = :green), " ", 
-           style(string(extras(obj)), color = :magenta), " ", 
-           style(string(sizeof(obj)), color = :yellow), " ",
+           extras(obj), " ", 
            sobj)
 end
 
@@ -271,7 +270,7 @@ Returns a string with any extra information about `x`.
 For AbstractArrays, this returns size information.
 """
 extras(x) = ""
-extras(x::AbstractArray) = string(size(x))
+extras(x::AbstractArray) = style(string(size(x)), color = :magenta) * " " * style(string(sizeof(x)), color = :yellow)
 
 """
 ```
