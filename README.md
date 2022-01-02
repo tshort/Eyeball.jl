@@ -29,6 +29,12 @@ The user can interactively browse the object tree using the following keys:
 * `enter` -- Return the object.
 * `q` -- Quit.
 
+Notes:
+
+* Arrays longer than 50 elements only have the first 50 elements shown when unfolded.
+* Some types are left folded by default (numbers, typed arrays, ...).
+* Some types are not recursed into. This includes modules. You can use `o` to open these in a new tree view.
+
 ## Examples
 
 Explore an object:
@@ -39,7 +45,8 @@ eye(a)
 ```
 ```jl
 julia> eye(a)
-[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof  >   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
+[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof
+>   NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}, Set{A
    +  h: Vector{Float64} (5,) [0.893213, 0.120307, 0.322837, 0.0256164, 0.416702]
       e: Expr  :(5 * sin(pi * t))
        head: Symbol  :call
