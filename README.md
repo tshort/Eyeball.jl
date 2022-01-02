@@ -226,8 +226,8 @@ By default, `eye` shows the properties of an object.
 That can be customized for different objects.
 For example, `Dict`s are shown with the key then the value, and abstract types are shown with subtypes.
 To customize what's shown for `SomeType`, define `Eyeball.getobjects(x::SomeType)`.
-This method should return an array of `Pair`s describing the objects to be shown.
-The first component of the `Pair` is the key or index of the object, and the second component is the object.
+This method should return two arrays, the keys and values describing the objects to be shown.
+The first array has the keys or indexes of the object, and the second component is the child objects.
 
 The display of objects can also be customized with the following boolean methods:
 

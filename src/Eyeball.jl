@@ -280,8 +280,8 @@ extras(x::AbstractArray) = style(string(size(x)), color = :magenta) * " " * styl
 ```
 getfields(x)
 ```
-Return an array of Pairs describing the objects to be shown when fields are selected. 
-The first component of the Pair is the key or index of the object, and the second component is the object.
+Return a tuple of two arrays describing the child objects to be shown for `x`. 
+The first array has the field names of `x`, and the second array has the fields.
 Normally, this should not have a custom definition for a type.
 Use `getoptions` for that.
 """
@@ -296,8 +296,8 @@ end
 ```
 getoptions(x)
 ```
-Return an array of Pairs describing the child objects to be shown for `x`. 
-The first component of the Pair is the key or index of the child object, and the second component is the child object.
+Return a tuple of two arrays describing the child objects to be shown for `x`. 
+The first array has the keys or indexes of the child objects, and the second array is the child objects.
 """
 function getoptions(x::T) where T
     keys = propertynames(x)
