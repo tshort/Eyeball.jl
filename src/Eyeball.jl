@@ -215,16 +215,20 @@ end
 
 function treelist(x, depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)))
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
-    opts = usefields ? getfields(x) : getoptions(x)
-    for (pn, obj) in opts
-        node = Node{ObjectWrapper}(ObjectWrapper{typeof(pn),typeof(obj)}(pn, obj), 
-                    parent, 
-                    foldobject(obj) || (depth < 1 && shouldrecurse(obj)))
-        if depth > -20 && obj ∉ history && shouldrecurse(obj)
-            treelist(obj, depth - 1, node, push!(copy(history), obj))
-        end
-        if !has_children(node)
-            node.foldchildren = false
+    keys, values = usefields ? getfields(x) : getoptions(x)
+    for idx in eachindex(keys)
+        if isassigned(values, idx)
+            k = keys[idx]
+            v = values[idx]
+            node = Node{ObjectWrapper}(ObjectWrapper{typeof(k),typeof(v)}(k, v), 
+                        parent, 
+                        foldobject(v) || (depth < 1 && shouldrecurse(v)))
+            if depth > -20 && v ∉ history && shouldrecurse(v)
+                treelist(v, depth - 1, node, push!(copy(history), v))
+            end
+            if !has_children(node)
+                node.foldchildren = false
+            end
         end
     end
     return parent
@@ -282,16 +286,10 @@ Normally, this should not have a custom definition for a type.
 Use `getoptions` for that.
 """
 function getfields(x::T) where T
-    res = Any[]
-    !isstructtype(T) && return res
-    for pn in fieldnames(typeof(x))
-        try
-            push!(res, (pn, getfield(x, pn)))
-        catch e
-            # println("error")
-        end
-    end
-    return res
+    !isstructtype(T) && return (Symbol[], Any[])
+    keys = [fn for fn in fieldnames(typeof(x)) if isdefined(x, fn)]
+    values = [getfield(x, fn) for fn in keys]
+    return (keys, values)
 end
 
 """
@@ -302,67 +300,45 @@ Return an array of Pairs describing the child objects to be shown for `x`.
 The first component of the Pair is the key or index of the child object, and the second component is the child object.
 """
 function getoptions(x::T) where T
-    res = Pair{Symbol,Any}[]
-    !isstructtype(T) && return res
-    for pn in propertynames(x)
-        try
-            push!(res, pn => getproperty(x, pn))
-        catch e
-            # println("error")
-        end
-    end
-    return res
+    keys = propertynames(x)
+    values = [getproperty(x, pn) for pn in keys]
+    return (keys, values)
 end
 function getoptions(x::DataType)
     if isabstracttype(x)
-        return [Symbol("") => st for st in subtypes(x) if st !== Any]
+        st = filter(t -> t !== Any, subtypes(x))
+        return (fill(Symbol(""), length(st)), st)
     end
-    res = Pair{Symbol,Any}[]
-    x <: Tuple && return res
+    empty = (Symbol[], Any[])
+    x <: Tuple && return empty
     if x.name === Base.NamedTuple_typename && !(x.parameters[1] isa Tuple)
         # named tuple type with unknown field names
-        return res
+        return empty
     end
     fields = fieldnames(x)
     fieldtypes = Base.datatype_fieldtypes(x)
-    for i in eachindex(fields)
-        try
-            push!(res, fields[i] => fieldtypes[i])
-        catch e
-            println("error")
-        end
-    end
-    return res
+    return (fields, fieldtypes)
 end
 function getoptions(x::AbstractArray{T}) where T
-    res = Pair{Int,T}[]
-    for i in eachindex(x)
-        i > 50 && return res
-        try
-            push!(res, i => x[i])
-        catch e
-            # println("error")
-        end
-    end
-    return res
+    keys = 1:min(50, length(x))
+    return (keys, x)
 end
 function getoptions(x::AbstractDict{<:S, T}) where {S<:Union{AbstractString, Symbol, Number},T}
-    [k => v for (k,v) in x]
+    return (collect(keys(x)), collect(values(x)))
 end
-function getoptions(x::AbstractDict)
-    res = Pair{Symbol,Any}[]
+function getoptions(x::AbstractDict) 
+    keys = repeat([:k, Symbol("_v")], outer = length(x)) 
+    values = Any[] 
     for (k,v) in x
-        push!(res, :k => k)
-        push!(res, Symbol("_v") => v)
+        push!(values, k)
+        push!(values, v)
     end
-    return res
+    return (keys, values)
 end
 function getoptions(x::AbstractSet{T}) where T
-    res = Pair{Symbol,T}[]
-    for v in x
-        push!(res, Symbol("") => v)
-    end
-    return res
+    values = collect(x)
+    keys = fill(Symbol(""), length(values))
+    return (keys, values)
 end
 
 iscorejunk(x) = parentmodule(parentmodule(parentmodule(x))) === Core && !isabstracttype(x) && isstructtype(x)
