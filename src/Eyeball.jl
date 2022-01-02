@@ -26,9 +26,9 @@ default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 """
 Explore objects and types.
 ```
-eye(x = Main, depth = 10; interactive = true, showsize = false)
+eye(x = Main, depth = 10; interactive = true)
 ```
-`depth` controls the depth of folding. `showsize` controls whether the size of objects is shown.
+`depth` controls the depth of folding.
 `interactive` means browse the object `x` interactively. 
 With `interactive` set to `false`, `eye` returns the tree as a `FoldingTrees.Node`.
 
@@ -43,12 +43,11 @@ During interactive browsing of the object tree, the following keys are available
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
-* `z` -- Size. Toggle showing size of objects.
 * `0`-`9` -- Fold to depth.
 * `enter` -- Return the object.
 * `q` -- Quit.
 """
-function eye(x = Main, depth = 10; interactive = true, showsize = false)
+function eye(x = Main, depth = 10; interactive = true)
     cursor = Ref(1)
     returnfun = x -> x.data.value
     redo = false    
@@ -82,7 +81,7 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             if isstructtype(typeof(o))
                 node.children = Node[]
                 node.data.showfields[] = !node.data.showfields[]
-                treelist(o, parent = node) 
+                treelist(o, 8, node) 
                 node.foldchildren = false
                 menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
             end
@@ -144,10 +143,6 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             choice = eye(typeof(node.data.value))
             resetterm()
-        elseif i == Int('z')
-            showsize = !showsize
-            redo = true
-            return true
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             fold!(node, i - 48)
@@ -156,16 +151,16 @@ function eye(x = Main, depth = 10; interactive = true, showsize = false)
         return false
     end
 
-    root = treelist(x, depth = depth - 1, showsize = showsize)
+    root = treelist(x, depth - 1)
     if interactive
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] size [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
-                root = treelist(x, depth = depth - 1, showsize = showsize)
+                root = treelist(x, depth - 1)
             else 
                 return
             end
@@ -183,7 +178,8 @@ struct ObjectWrapper{K,V}
     ObjectWrapper{K,V}(key, value) where {K,V} = new(key, value, Ref(false))
 end
 
-Base.show(io::IO, x::ObjectWrapper) = print(io, x.str)
+Base.show(io::IO, x::ObjectWrapper) = print(io, tostring(x.key, x.value))
+
 
 getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
@@ -217,16 +213,15 @@ function style(str; kws...)
 end
 
 
-function treelist(x; depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)), showsize = false)
+function treelist(x, depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)))
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
     opts = usefields ? getfields(x) : getoptions(x)
     for (pn, obj) in opts
-        nprop = length(getoptions(obj)) 
         node = Node{ObjectWrapper}(ObjectWrapper{typeof(pn),typeof(obj)}(pn, obj), 
                     parent, 
-                    foldobject(obj) || (depth < 1 && nprop > 0 && shouldrecurse(obj)))
-        if nprop > 0 && depth > -20 && obj ∉ history && shouldrecurse(obj, nprop)
-            treelist(obj, depth = depth - 1, parent = node, history = push!(copy(history), obj))
+                    foldobject(obj) || (depth < 1 && shouldrecurse(obj)))
+        if depth > -20 && obj ∉ history && shouldrecurse(obj)
+            treelist(obj, depth - 1, node, push!(copy(history), obj))
         end
         if !has_children(node)
             node.foldchildren = false
@@ -252,19 +247,18 @@ end
 
 """
 ```
-tostring(pn, obj; showsize = false)
+tostring(pn, obj)
 ```
 Returns a string with the text representation of `obj` with key `pn`.
-`showsize` controls whether the size of the object is included.
 """
-function tostring(key, obj; showsize = false)
+function tostring(key, obj)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
     show(io, obj)
     sobj = String(take!(io.io))
-    string(style(key, color = :cyan), ": ", 
-           style(typeof(obj), color = :green), " ", 
-           style(extras(obj), color = :magenta), " ", 
-           showsize ? string(style(sizeof(obj), color = :yellow), " ") : "",
+    string(style(string(key), color = :cyan), ": ", 
+           style(string(typeof(obj)), color = :green), " ", 
+           style(string(extras(obj)), color = :magenta), " ", 
+           style(string(sizeof(obj)), color = :yellow), " ",
            sobj)
 end
 
@@ -309,11 +303,11 @@ Return an array of Pairs describing the child objects to be shown for `x`.
 The first component of the Pair is the key or index of the child object, and the second component is the child object.
 """
 function getoptions(x::T) where T
-    res = Any[]
+    res = Pair{Symbol,Any}[]
     !isstructtype(T) && return res
     for pn in propertynames(x)
         try
-            push!(res, (pn, getproperty(x, pn)))
+            push!(res, pn => getproperty(x, pn))
         catch e
             # println("error")
         end
@@ -322,9 +316,9 @@ function getoptions(x::T) where T
 end
 function getoptions(x::DataType)
     if isabstracttype(x)
-        return ["" => st for st in subtypes(x) if st !== Any]
+        return [Symbol("") => st for st in subtypes(x) if st !== Any]
     end
-    res = Any[]
+    res = Pair{Symbol,Any}[]
     x <: Tuple && return res
     if x.name === Base.NamedTuple_typename && !(x.parameters[1] isa Tuple)
         # named tuple type with unknown field names
@@ -334,41 +328,40 @@ function getoptions(x::DataType)
     fieldtypes = Base.datatype_fieldtypes(x)
     for i in eachindex(fields)
         try
-            push!(res, (fields[i], fieldtypes[i]))
+            push!(res, fields[i] => fieldtypes[i])
         catch e
             println("error")
         end
     end
     return res
 end
-function getoptions(x::AbstractArray)
-    length(x) > 500 && return []
-    res = Any[]
+function getoptions(x::AbstractArray{T}) where T
+    res = Pair{Int,T}[]
     for i in eachindex(x)
+        i > 50 && return res
         try
-            push!(res, (i, x[i]))
+            push!(res, i => x[i])
         catch e
             # println("error")
         end
     end
     return res
-    [(i, x[i]) for i in eachindex(x)]
 end
 function getoptions(x::AbstractDict{<:S, T}) where {S<:Union{AbstractString, Symbol, Number},T}
-    [(k,v) for (k,v) in x]
+    [k => v for (k,v) in x]
 end
 function getoptions(x::AbstractDict)
-    res = Any[]
+    res = Pair{Symbol,Any}[]
     for (k,v) in x
         push!(res, :k => k)
-        push!(res, "_v" => v)
+        push!(res, Symbol("_v") => v)
     end
     return res
 end
-function getoptions(x::AbstractSet)
-    res = Any[]
+function getoptions(x::AbstractSet{T}) where T
+    res = Pair{Symbol,T}[]
     for v in x
-        push!(res, "" => v)
+        push!(res, Symbol("") => v)
     end
     return res
 end
@@ -377,18 +370,18 @@ iscorejunk(x) = parentmodule(parentmodule(parentmodule(x))) === Core && !isabstr
 
 """
 ```
-shouldrecurse(x, len = 5)
+shouldrecurse(x)
 ```
 A boolean that controls whether eye recurses into object `x`. 
 `len` is the length of the object. 
-This defaults to true when `len < 30`.
+This defaults to true.
 """
-shouldrecurse(x, len = 5) = len < 30
-shouldrecurse(::Module, len) = false
-shouldrecurse(::Method, len) = false
-shouldrecurse(::TypeVar, len) = false
-shouldrecurse(x::DataType, len) = x !== Any && x !== Function && !iscorejunk(x)
-shouldrecurse(::Union, len) = false
+shouldrecurse(x) = true
+shouldrecurse(::Module) = false
+shouldrecurse(::Method) = false
+shouldrecurse(::TypeVar) = false
+shouldrecurse(x::DataType) = x !== Any && x !== Function && !iscorejunk(x)
+shouldrecurse(::Union) = false
 
 """
 ```
