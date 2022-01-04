@@ -1,6 +1,6 @@
 module Eyeball
 
-Base.Experimental.@compiler_options compile=min optimize=1
+Base.Experimental.@compiler_options compile=min optimize=1 # infer=false
 
 using Base.Docs
 
@@ -168,11 +168,15 @@ end
 struct ObjectWrapper{K,V}
     key::K
     value::V
+    string::Base.RefValue{Union{Nothing,String}}
     showfields::Base.RefValue{Bool}
-    ObjectWrapper{K,V}(key, value) where {K,V} = new(key, value, Ref(false))
+    ObjectWrapper{K,V}(key, value, string = Ref{Union{Nothing,String}}(nothing), showfields = Ref(false)) where {K,V} = new(key, value, string, showfields)
 end
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, tostring(x.key, x.value))
+
+struct UNDEFPlaceholder end
+const UNDEF = UNDEFPlaceholder()
 
 
 getdoc(x) = doc(x)
@@ -211,25 +215,26 @@ function treelist(x, depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{Strin
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
     keys, values = usefields ? getfields(x) : getoptions(x)
     for idx in eachindex(keys)
-        if isassigned(values, idx)
-            k = keys[idx]
-            v = values[idx]
-            node = Node{ObjectWrapper}(ObjectWrapper{typeof(k),typeof(v)}(k, v), 
-                        parent, 
-                        foldobject(v) || (depth < 1 && shouldrecurse(v)))
-            if depth > -20 && v ∉ history && shouldrecurse(v)
-                treelist(v, depth - 1, node, push!(copy(history), v))
-            end
-            if !has_children(node)
-                node.foldchildren = false
-            end
+        k = keys[idx]
+        v = isassigned(values, idx) ? values[idx] : UNDEF
+        node = Node{ObjectWrapper}(ObjectWrapper{typeof(k),typeof(v)}(k, v), 
+                    parent, 
+                    foldobject(v) || (depth < 1 && shouldrecurse(v)))
+        if depth > -20 && v ∉ history && shouldrecurse(v)
+            treelist(v, depth - 1, node, push!(copy(history), v))
+        end
+        if !has_children(node)
+            node.foldchildren = false
         end
     end
     return parent
 end
 
 function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; width::Int=(displaysize(stdout)::Tuple{Int,Int})[2])
-    FoldingTrees.writeoption(buf, tostring(obj.key, obj.value), charsused; width=width)
+    if obj.string[] == nothing 
+        obj.string[] = tostring(obj.key, obj.value)
+    end 
+    FoldingTrees.writeoption(buf, obj.string[], charsused; width=width)
 end
 
 function _pager(object)
@@ -249,14 +254,17 @@ tostring(pn, obj)
 ```
 Returns a string with the text representation of `obj` with key `pn`.
 """
-function tostring(key, obj)
+function tostring(key, value)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
-    show(io, obj)
-    sobj = String(take!(io.io))
+    show(io, value)
+    svalue = String(take!(io.io))
     string(style(string(key), color = :cyan), ": ", 
-           style(string(typeof(obj)), color = :green), " ", 
-           extras(obj), " ", 
-           sobj)
+           style(string(typeof(value)), color = :green), " ", 
+           extras(value), " ", 
+           svalue)
+end
+function tostring(key, value::UNDEFPlaceholder)
+    string(style(string(key), color = :cyan), ": #undef")
 end
 
 
@@ -281,8 +289,8 @@ Use `getoptions` for that.
 """
 function getfields(x::T) where T
     !isstructtype(T) && return (Symbol[], Any[])
-    keys = [fn for fn in fieldnames(typeof(x)) if isdefined(x, fn)]
-    values = [getfield(x, fn) for fn in keys]
+    keys = [fn for fn in fieldnames(typeof(x))]
+    values = [isdefined(x, fn) ? getfield(x, fn) : UNDEF for fn in keys]
     return (keys, values)
 end
 
@@ -293,9 +301,9 @@ getoptions(x)
 Return a tuple of two arrays describing the child objects to be shown for `x`. 
 The first array has the keys or indexes of the child objects, and the second array is the child objects.
 """
-function getoptions(x::T) where T
+function getoptions(x)
     keys = propertynames(x)
-    values = [getproperty(x, pn) for pn in keys]
+    values = [isdefined(x, pn) ? getproperty(x, pn) : UNDEF for pn in keys]
     return (keys, values)
 end
 function getoptions(x::DataType)
@@ -348,9 +356,11 @@ This defaults to true.
 shouldrecurse(x) = true
 shouldrecurse(::Module) = false
 shouldrecurse(::Method) = false
+shouldrecurse(::Core.MethodInstance) = false
 shouldrecurse(::TypeVar) = false
 shouldrecurse(x::DataType) = x !== Any && x !== Function && !iscorejunk(x)
 shouldrecurse(::Union) = false
+shouldrecurse(::UNDEFPlaceholder) = false
 
 """
 ```

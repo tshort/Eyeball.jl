@@ -1,5 +1,7 @@
 module FoldingTrees
 
+#Base.Experimental.@compiler_options compile=min optimize=1 infer=false
+
 using REPL.TerminalMenus
 using AbstractTrees
 
