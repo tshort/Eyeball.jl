@@ -36,10 +36,11 @@ During interactive browsing of the object tree, the following keys are available
 
 * `↑` `↓` `←` `→` -- Up and down moves through the tree. Left collapses a tree. Right expands a folded tree. Vim movement keys (`h` `j` `k` `l`) are also supported.
 * `d` -- Docs. Show documentation on the object.
+* `e` -- Expand. Show more subobjects.
 * `f` -- Toggle fields. By default, parameters are shown for most objects.
-  `f` toggles between the normal view and a view showing the fields of an object.
+  `f` toggles between the normal view and a view showing the fields of an object. 
 * `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
-* `o` -- Open. Open the object in a new tree view.
+* `o` -- Open. Open the object in a new tree view. `O` opens all (mainly useful for modules).
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
@@ -47,12 +48,15 @@ During interactive browsing of the object tree, the following keys are available
 * `enter` -- Return the object.
 * `q` -- Quit.
 """
-function eye(x = Main, depth = 10; interactive = true)
+function eye(x = Main, depth = 10; interactive = true, all = false)
+    if all
+        x = All(x)
+    end
     cursor = Ref(1)
     returnfun = x -> x.data.value
     redo = false    
     function resetterm() 
-        REPL.Terminals.clear(term)
+        println(term.out_stream)
         REPL.Terminals.raw!(term, true)
         print(term.out_stream, "\x1b[?25l")  # hide cursor
     end
@@ -75,18 +79,29 @@ function eye(x = Main, depth = 10; interactive = true)
             if isstructtype(typeof(o))
                 node.children = Node[]
                 node.data.showfields[] = !node.data.showfields[]
-                treelist(o, 8, node) 
+                treelist(o, 8, 16, node) 
                 node.foldchildren = false
                 menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
             end
         elseif i == Int('d')
-            REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             _pager(getdoc(node.data.value))
             resetterm()
-        elseif i == Int('m')
-            REPL.Terminals.clear(term)
+        elseif i == Int('e')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            o = node.data.value
+            n = length(node.children)
+            if length(node.children) < 1 || !(node.children[1].data.value isa ExpandPlaceholder) 
+                return false
+            end
+            placeholder = popfirst!(node.children)
+            ctx = placeholder.data.value
+            shown = length(node.children)  # double what's shown
+            _iterate(ctx.itr, ctx.depth, shown, node, ctx.history) 
+            menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
+        elseif i == Int('m')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            println(term.out_stream, "\n\nOpening methodswith(`$(node.data.key)`) ...\n")
             o = node.data.value
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o)))
             resetterm()
@@ -97,8 +112,8 @@ function eye(x = Main, depth = 10; interactive = true)
                 return true
             end
         elseif i == Int('M')
-            REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            println(term.out_stream, "\n\nOpening methodswith(`$(node.data.key)`, supertypes = true) ...\n")
             o = node.data.value
             newchoice = eye(methodswith(o isa DataType ? o : typeof(o), supertypes = true))
             resetterm()
@@ -109,9 +124,20 @@ function eye(x = Main, depth = 10; interactive = true)
                 return true
             end
         elseif i == Int('o')
-            REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            println(term.out_stream, "\n\nOpening `$(node.data.key)` ...\n")
             newchoice = eye(node.data.value)
+            resetterm()
+            if newchoice !== nothing
+                returnfun = x -> newchoice
+                menu.chosen = true
+                node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+                return true
+            end
+        elseif i == Int('O')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            println(term.out_stream, "\n\nOpening `$(node.data.key)` ...\n")
+            newchoice = eye(All(node.data.value))
             resetterm()
             if newchoice !== nothing
                 returnfun = x -> newchoice
@@ -125,7 +151,6 @@ function eye(x = Main, depth = 10; interactive = true)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             return true
         elseif i == Int('s')
-            REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             io = IOContext(IOBuffer(), :displaysize => displaysize(term), :limit => true, :color => true)
             show(io, MIME"text/plain"(), node.data.value)
@@ -133,8 +158,8 @@ function eye(x = Main, depth = 10; interactive = true)
             _pager(node.data.value)
             resetterm()
         elseif i == Int('t')
-            REPL.Terminals.clear(term)
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            println(term.out_stream, "\n\nOpening typeof(`$(node.data.key)`) ...\n")
             choice = eye(typeof(node.data.value))
             resetterm()
         elseif i in Int.('0':'9')
@@ -144,17 +169,17 @@ function eye(x = Main, depth = 10; interactive = true)
         end                                                        
         return false
     end
-
-    root = treelist(x, depth - 1)
+    shown = 50
+    root = treelist(x, depth - 1, shown)
     if interactive
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
-                root = treelist(x, depth - 1)
+                root = treelist(x, depth - 1, shown)
             else 
                 return
             end
@@ -178,7 +203,17 @@ Base.show(io::IO, x::ObjectWrapper) = print(io, tostring(x.key, x.value))
 struct UNDEFPlaceholder end
 const UNDEF = UNDEFPlaceholder()
 
+struct ExpandPlaceholder{T}
+    itr::T
+    depth::Int 
+    shown::Int
+    history
+end
 
+struct All{T}
+    value
+end
+All(x) = All{typeof(x)}(x)
 getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
 
@@ -211,23 +246,42 @@ function style(str; kws...)
 end
 
 
-function treelist(x, depth = 0, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)))
+struct UndefIterator{T}
+    x::T
+end
+Base.iterate(a::UndefIterator, state = 1) = (isassigned(a.x, state) ? a.x[state] : UNDEF, state + 1)
+Base.length(a::UndefIterator) = length(a.x)
+undefiterator(x) = x
+undefiterator(x::AbstractArray) = UndefIterator(x)
+
+function treelist(x, depth = 0, shown = 10, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)))
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
-    keys, values = usefields ? getfields(x) : getoptions(x)
-    for idx in eachindex(keys)
-        k = keys[idx]
-        v = isassigned(values, idx) ? values[idx] : UNDEF
+    itr = Iterators.Stateful(usefields ? getfields(x) : getoptions(x))
+    _iterate(itr, depth, shown, parent, history)
+    # parent.itr[] = itr
+    return parent
+end
+
+function _iterate(itr, depth, shown, parent, history)
+    for (k,v) in Iterators.take(itr, shown)
         node = Node{ObjectWrapper}(ObjectWrapper{typeof(k),typeof(v)}(k, v), 
                     parent, 
                     foldobject(v) || (depth < 1 && shouldrecurse(v)))
         if depth > -20 && v ∉ history && shouldrecurse(v)
-            treelist(v, depth - 1, node, push!(copy(history), v))
+            treelist(v, depth - 1, 10, node, push!(copy(history), v))
         end
         if !has_children(node)
             node.foldchildren = false
         end
     end
-    return parent
+    if 0 < length(itr) < 4
+        _iterate(itr, depth, shown, parent, history)
+    end
+    if length(itr) > 0
+        marker = Node{ObjectWrapper}(ObjectWrapper{Symbol,ExpandPlaceholder}(:!, ExpandPlaceholder(itr, depth, shown, history)))
+        marker.parent = parent
+        pushfirst!(parent.children, marker)
+    end
 end
 
 function FoldingTrees.writeoption(buf::IO, obj::ObjectWrapper, charsused::Int; width::Int=(displaysize(stdout)::Tuple{Int,Int})[2])
@@ -266,6 +320,11 @@ end
 function tostring(key, value::UNDEFPlaceholder)
     string(style(string(key), color = :cyan), ": #undef")
 end
+function tostring(key, value::ExpandPlaceholder)
+    N = length(value.itr.itr)
+    n = length(value.itr)
+    string(style(string(key), color = :red), "   Showing items 1-", N-n, " of ", N, ". Items remaining=", n, ". Hit [e] to expand.")
+end
 
 
 """
@@ -288,10 +347,10 @@ Normally, this should not have a custom definition for a type.
 Use `getoptions` for that.
 """
 function getfields(x::T) where T
-    !isstructtype(T) && return (Symbol[], Any[])
-    keys = [fn for fn in fieldnames(typeof(x))]
-    values = [isdefined(x, fn) ? getfield(x, fn) : UNDEF for fn in keys]
-    return (keys, values)
+    !isstructtype(T) && return nothing
+    keys = fieldnames(typeof(x))
+    values = (isdefined(x, i) ? getfield(x, i) : UNDEF for i in 1:length(keys))
+    return zip(keys, values)
 end
 
 """
@@ -303,30 +362,37 @@ The first array has the keys or indexes of the child objects, and the second arr
 """
 function getoptions(x)
     keys = propertynames(x)
-    values = [isdefined(x, pn) ? getproperty(x, pn) : UNDEF for pn in keys]
-    return (keys, values)
+    values = (isdefined(x, pn) ? getproperty(x, pn) : UNDEF for pn in keys)
+    return zip(keys, values)
+end
+function getoptions(x::All)
+    return getoptions(x.value)
+end
+function getoptions(x::All{Module})
+    y = x.value
+    keys = names(y, all = true)
+    values = (isdefined(y, pn) ? getproperty(y, pn) : UNDEF for pn in keys)
+    return zip(keys, values)
 end
 function getoptions(x::DataType)
     if isabstracttype(x)
         st = filter(t -> t !== Any, subtypes(x))
-        return (fill(Symbol(""), length(st)), st)
+        return zip(Iterators.repeated(Symbol("")), st)
     end
-    empty = (Symbol[], Any[])
-    x <: Tuple && return empty
+    x <: Tuple && return nothing
     if x.name === Base.NamedTuple_typename && !(x.parameters[1] isa Tuple)
         # named tuple type with unknown field names
-        return empty
+        return nothing
     end
     fields = fieldnames(x)
     fieldtypes = Base.datatype_fieldtypes(x)
-    return (fields, fieldtypes)
+    return zip(fields, fieldtypes)
 end
 function getoptions(x::AbstractArray{T}) where T
-    keys = 1:min(100, length(x))
-    return (keys, x)
+    return zip(eachindex(x), UndefIterator(x))
 end
 function getoptions(x::AbstractDict{<:S, T}) where {S<:Union{AbstractString, Symbol, Number},T}
-    return (collect(keys(x)), collect(values(x)))
+    return x
 end
 function getoptions(x::AbstractDict) 
     keys = repeat([:k, Symbol("_v")], outer = length(x)) 
@@ -335,12 +401,10 @@ function getoptions(x::AbstractDict)
         push!(values, k)
         push!(values, v)
     end
-    return (keys, values)
+    return zip(keys, values)
 end
 function getoptions(x::AbstractSet{T}) where T
-    values = collect(x)
-    keys = fill(Symbol(""), length(values))
-    return (keys, values)
+    return zip(Iterators.repeated(Symbol("")), x)
 end
 
 iscorejunk(x) = parentmodule(parentmodule(parentmodule(x))) === Core && !isabstracttype(x) && isstructtype(x)
@@ -372,7 +436,7 @@ This defaults to false.
 """
 foldobject(x) = false
 foldobject(x::AbstractArray) = true
-foldobject(x::AbstractVector{Any}) = length(x) > 5
+foldobject(x::AbstractVector{Any}) = length(x) > 10
 foldobject(::UnitRange) = true
 foldobject(x::Number) = true
 foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x)
