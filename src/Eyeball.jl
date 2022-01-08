@@ -44,7 +44,7 @@ During interactive browsing of the object tree, the following keys are available
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
-* `0`-`9` -- Fold to depth.
+* `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the object.
 * `q` -- Quit.
 """
@@ -55,6 +55,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
     cursor = Ref(1)
     returnfun = x -> x.data.value
     redo = false    
+    foldctx = (cursoridx = 1, depth = depth, expandall = true)
     function resetterm() 
         println(term.out_stream)
         REPL.Terminals.raw!(term, true)
@@ -164,7 +165,9 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
             resetterm()
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
-            fold!(node, i - 48)
+            expandall = foldctx.cursoridx == menu.cursoridx && foldctx.depth == i && foldctx.expandall
+            fold!(node, i - 48, expandall)
+            foldctx = (cursoridx = menu.cursoridx, depth = i, expandall = !expandall)
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         end                                                        
         return false
@@ -219,16 +222,16 @@ getdoc(x::Method) = doc(x.module.eval(x.name))
 
 has_children(x) = length(x.children) > 0
 
-function fold!(node, depth)
+function fold!(node, depth, expandall)
     if depth == 0
         node.foldchildren = has_children(node)
     else
-        if foldobject(node.data.value)
+        if foldobject(node.data.value) && !expandall
             node.foldchildren = has_children(node)
         else
             node.foldchildren = false
             for child in AbstractTrees.children(node)
-                fold!(child, depth - 1)
+                fold!(child, depth - 1, expandall)
             end 
         end 
     end 

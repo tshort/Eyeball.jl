@@ -26,7 +26,7 @@ The user can interactively browse the object tree using the following keys:
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`). 
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
-* `0`-`9` -- Fold to depth.
+* `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the object.
 * `q` -- Quit.
 
@@ -34,6 +34,7 @@ Notes:
 
 * Longer objects only have the first few elements shown when unfolded. Use `e` to expand.
 * Some types are left folded by default (numbers, typed arrays, ...).
+  The number keys for folding cycle between keeping these folded and unfolding these.
 * Some types are not recursed into. This includes modules. You can use `o` to open these in a new tree view.
 * `O` and `all = true` adds a wrapper `Eyeball.All` around the object.
   This is mainly for use with modules where options are taken with `name(module, all = true)`.
@@ -239,7 +240,7 @@ This defaults to `true`.
 For overly large or complex objects, it helps to return `false`.
 That's done internally for `Module`s, `Method`s, and a few other types.
 `foldobject` controls whether `eye` automatically folds the object.
-This is useful for types where the components are usually not needed.
+This is useful for types where the components usually don't need to be shown.
 This defaults to `false`.
 
 ## Under the Hood
