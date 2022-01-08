@@ -365,7 +365,11 @@ The first array has the keys or indexes of the child objects, and the second arr
 """
 function getoptions(x)
     keys = propertynames(x)
-    values = (isdefined(x, pn) ? getproperty(x, pn) : UNDEF for pn in keys)
+    if keys === fieldnames(typeof(x))
+        values = (isdefined(x, pn) ? getproperty(x, pn) : UNDEF for pn in keys)
+    else
+        values = (getproperty(x, pn) for pn in keys)
+    end
     return zip(keys, values)
 end
 function getoptions(x::All)
