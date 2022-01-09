@@ -247,7 +247,11 @@ struct Summarize{T}
     value
 end
 Summarize(x) = Summarize{typeof(x)}(x)
-function Base.show(io::IO, x::Summarize{<:AbstractArray{<:Real}})
+# Don't wrap some types
+Summarize(x::ExpandPlaceholder) = x
+Summarize(x::UNDEFPlaceholder) = x
+
+function Base.show(io::IO, x::Summarize{<:AbstractArray{T}}) where T<:Union{Real,Missing}
     if eltype(x) >: Missing 
         #nm = nmissing(x)
         v = skipmissing(x.value)
@@ -367,14 +371,12 @@ end
 function tostring(key, value::UNDEFPlaceholder)
     string(style(string(key), color = :cyan), ": #undef")
 end
-tostring(key, x::Summarize{<:UNDEFPlaceholder}) = tostring(key, x.value)
 
 function tostring(key, value::ExpandPlaceholder)
     N = length(value.itr.itr)
     n = length(value.itr)
     string(style(string(key), color = :red), "   Showing items 1-", N-n, " of ", N, ". Items remaining=", n, ". Hit [e] to expand.")
 end
-tostring(key, x::Summarize{<:ExpandPlaceholder}) = tostring(key, x.value)
 
 function tostring(key, x::Summarize)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
