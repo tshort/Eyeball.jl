@@ -40,6 +40,7 @@ Notes:
 * Some types are not recursed into. This includes modules. You can use `o` to open these in a new tree view.
 * `O` and `all = true` adds a wrapper `Eyeball.All` around the object.
   This is mainly for use with modules where options are taken with `name(module, all = true)`.
+* Summarize `z` shows a summary of child objects. That's useful for DataFrames, nested arrays, and similar types.
 
 ## Examples
 
