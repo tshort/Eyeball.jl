@@ -26,6 +26,8 @@ The user can interactively browse the object tree using the following keys:
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`). 
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
+* `z` -- Summarize. Toggle a summary of the object and child objects. 
+  For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
 * `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the object.
 * `q` -- Quit.
@@ -242,6 +244,9 @@ That's done internally for `Module`s, `Method`s, and a few other types.
 `foldobject` controls whether `eye` automatically folds the object.
 This is useful for types where the components usually don't need to be shown.
 This defaults to `false`.
+
+To add additional "summarize" options, define `Base.show(io::IO, x::Eyeball.Summarize{T})` for type `T`.
+
 
 ## Under the Hood
 

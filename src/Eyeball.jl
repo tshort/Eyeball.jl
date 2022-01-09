@@ -12,6 +12,8 @@ import REPL.TerminalMenus: request
 using AbstractTrees
 
 import TerminalPager
+using Statistics
+
 
 # TODO: de-vendor once changes are upstreamed.
 include("vendor/FoldingTrees/src/FoldingTrees.jl")
@@ -44,6 +46,8 @@ During interactive browsing of the object tree, the following keys are available
 * `r` -- Return tree. Return the tree (a `FoldingTrees.Node`).
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
+* `z` -- Summarize. Toggle a summary of the object and child objects. 
+  For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
 * `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the object.
 * `q` -- Quit.
@@ -163,6 +167,24 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
             println(term.out_stream, "\n\nOpening typeof(`$(node.data.key)`) ...\n")
             choice = eye(typeof(node.data.value))
             resetterm()
+        elseif i == Int('z')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            d = node.data
+            d.summarize[] = !d.summarize[]
+            if d.summarize[]
+                d.string[] = tostring(d.key, Summarize(d.value))
+            else
+                d.string[] = tostring(d.key, d.value)
+            end
+            for n in node.children
+                dc = n.data
+                dc.summarize[] = d.summarize[]
+                if dc.summarize[]
+                    dc.string[] = tostring(dc.key, Summarize(dc.value))
+                else
+                    dc.string[] = tostring(dc.key, dc.value)
+                end
+            end
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             expandall = foldctx.cursoridx == menu.cursoridx && foldctx.depth == i && foldctx.expandall
@@ -178,7 +200,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
@@ -198,7 +220,10 @@ struct ObjectWrapper{K,V}
     value::V
     string::Base.RefValue{Union{Nothing,String}}
     showfields::Base.RefValue{Bool}
-    ObjectWrapper{K,V}(key, value, string = Ref{Union{Nothing,String}}(nothing), showfields = Ref(false)) where {K,V} = new(key, value, string, showfields)
+    summarize::Base.RefValue{Bool}
+    ObjectWrapper{K,V}(key, value, string = Ref{Union{Nothing,String}}(nothing), showfields = Ref(false), summarize = Ref(false)) where {K,V} = 
+        new(key, value, string, showfields, summarize
+)
 end
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, tostring(x.key, x.value))
@@ -217,6 +242,24 @@ struct All{T}
     value
 end
 All(x) = All{typeof(x)}(x)
+
+struct Summarize{T}
+    value
+end
+Summarize(x) = Summarize{typeof(x)}(x)
+function Base.show(io::IO, x::Summarize{<:AbstractArray{<:Real}})
+    if eltype(x) >: Missing 
+        #nm = nmissing(x)
+        v = skipmissing(x.value)
+    else
+        v = x
+    end
+    print(io, "x̅=", mean(v), ", q=", quantile(v, [0, .25, 0.5, 0.75, 1]))
+    # nm > 0 && print(io, ", nm=", nm)
+    nothing
+end
+Base.show(io::IO, x::Summarize) = show(io, x.value)
+
 getdoc(x) = doc(x)
 getdoc(x::Method) = doc(x.module.eval(x.name))
 
@@ -320,13 +363,27 @@ function tostring(key, value)
            extras(value), " ", 
            svalue)
 end
+
 function tostring(key, value::UNDEFPlaceholder)
     string(style(string(key), color = :cyan), ": #undef")
 end
+tostring(key, x::Summarize{<:UNDEFPlaceholder}) = tostring(key, x.value)
+
 function tostring(key, value::ExpandPlaceholder)
     N = length(value.itr.itr)
     n = length(value.itr)
     string(style(string(key), color = :red), "   Showing items 1-", N-n, " of ", N, ". Items remaining=", n, ". Hit [e] to expand.")
+end
+tostring(key, x::Summarize{<:ExpandPlaceholder}) = tostring(key, x.value)
+
+function tostring(key, x::Summarize)
+    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
+    show(io, x)
+    svalue = String(take!(io.io))
+    string(style(string(key), color = :cyan), ": ", 
+           style(string(typeof(x.value)), color = :green), " ", 
+           extras(x.value), " ", 
+           svalue)
 end
 
 
