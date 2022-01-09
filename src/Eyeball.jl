@@ -343,7 +343,7 @@ end
 
 function _pager(object)
      buffer = IOBuffer()
-     ctx = IOContext(buffer, :color => true)
+     ctx = IOContext(buffer, :color => true, :compact => true, :limit => true, :displaysize => (3000,500))
      show(ctx, "text/plain", object)
      TerminalPager.pager(String(take!(buffer)))
 end
