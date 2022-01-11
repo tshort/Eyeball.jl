@@ -258,7 +258,7 @@ function Base.show(io::IO, x::Summarize{<:AbstractArray{T}}) where T<:Union{Real
     else
         v = x
     end
-    print(io, "x̅=", mean(v), ", q=", quantile(v, [0, .25, 0.5, 0.75, 1]))
+    print(io, "x̄=", mean(v), ", q=", quantile(v, [0, .25, 0.5, 0.75, 1]))
     # nm > 0 && print(io, ", nm=", nm)
     nothing
 end
@@ -461,13 +461,7 @@ function getoptions(x::AbstractDict{<:S, T}) where {S<:Union{AbstractString, Sym
     return x
 end
 function getoptions(x::AbstractDict) 
-    keys = repeat([:k, Symbol("_v")], outer = length(x)) 
-    values = Any[] 
-    for (k,v) in x
-        push!(values, k)
-        push!(values, v)
-    end
-    return zip(keys, values)
+    return zip(Iterators.repeated(Symbol("")), (k => v for (k,v) in x))
 end
 function getoptions(x::AbstractSet{T}) where T
     return zip(Iterators.repeated(Symbol("")), x)
@@ -507,5 +501,6 @@ foldobject(::UnitRange) = true
 foldobject(x::Number) = true
 foldobject(x::DataType) = !isabstracttype(x) && isstructtype(x)
 foldobject(x::UnionAll) = true
+foldobject(x::Pair) = true
 
 end

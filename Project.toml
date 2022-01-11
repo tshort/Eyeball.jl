@@ -1,7 +1,7 @@
 name = "Eyeball"
 uuid = "ce36242b-ad83-4f84-8519-47cd8aeefd60"
 authors = ["Tom Short <tshort.rlists@gmail.com>"]
-version = "0.4.1"
+version = "0.4.2"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"

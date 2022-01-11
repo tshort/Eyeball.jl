@@ -34,9 +34,9 @@ end
     s = String(take!(io))
     @test s[1:100] == "  : \e[32mNamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeo"
     root = eye(a, 2, interactive = false)
-    @test count_open_leaves(root) == 30
+    @test count_open_leaves(root) == 26
     root = eye(a, interactive = false)
-    @test count_open_leaves(root) == 44
+    @test count_open_leaves(root) == 40
 end
 
 

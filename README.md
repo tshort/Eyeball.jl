@@ -23,13 +23,13 @@ The user can interactively browse the object tree using the following keys:
   `f` toggles between the normal view and a view showing the fields of an object.
 * `m` -- Methodswith. Show methods available for objects of this type. `M` specifies `supertypes = true`.
 * `o` -- Open. Open the object in a new tree view. `O` opens all (mainly useful for modules).
-* `r` -- Return tree. Return the tree (a `FoldingTrees.Node`). 
+* `r` -- Return tree (a `FoldingTrees.Node`). 
 * `s` -- Show object.
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Summarize. Toggle a summary of the object and child objects. 
   For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
 * `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
-* `enter` -- Return the object.
+* `enter` -- Return the selected object.
 * `q` -- Quit.
 
 Notes:
@@ -41,10 +41,12 @@ Notes:
 * `O` and `all = true` adds a wrapper `Eyeball.All` around the object.
   This is mainly for use with modules where options are taken with `name(module, all = true)`.
 * Summarize `z` shows a summary of child objects. That's useful for DataFrames, nested arrays, and similar types.
+* For dictionaries with simple keys (symbols, strings, or numbers), the key is shown directly.
+  For others, a list of key-value pairs is shown.
 
 ## Examples
 
-Explore an object:
+#### Explore an object:
 
 ```julia
 a = (h=rand(5), e=:(5sin(pi*t)), f=sin, c=33im, set=Set((:a, 9, rand(1:5, 8))), b=(c=1,d=9,e=(i=9,f=0)), x=9 => 99:109, d=Dict(1=>2, 3=>4), ds=Dict(:s=>4,:t=>7), dm=Dict(1=>9, "x"=>8))
@@ -52,8 +54,8 @@ eye(a)
 ```
 ```jl
 julia> eye(a)
-[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit
- >   : NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}   +  h: Vector{Float64} (5,) 40 [0.0799809, 0.501278, 0.82563, 0.990924, 0.842197]
+[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit
+ >   : NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int64}   +  h: Vector{Float64} (5,) 40 [0.589398, 0.761107, 0.963494, 0.835393, 0.488657]
       e: Expr  :(5 * sin(pi * t))
        head: Symbol  :call
        args: Vector{Any} (3,) 24 Any[:*, 5, :(sin(pi * t))]
@@ -71,25 +73,25 @@ julia> eye(a)
             3: Symbol  :t
       f: typeof(sin)  sin
    +  c: Complex{Int64}  0+33im
-      set: Set{Any}  Set(Any[:a, [2, 3, 4, 3, 1, 2, 2, 2], 9])
+      set: Set{Any}  Set(Any[:a, 9, [2, 3, 2, 5, 5, 1, 4, 5]])
        : Symbol  :a
-   +   : Vector{Int64} (8,) 64 [2, 3, 4, 3, 1, 2, 2, 2]
        : Int64  9
+   +   : Vector{Int64} (8,) 64 [2, 3, 2, 5, 5, 1, 4, 5]
       b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}}  (c = 1, d = 9, e = (i       c: Int64  1
        d: Int64  9
        e: NamedTuple{(:i, :f), Tuple{Int64, Int64}}  (i = 9, f = 0)
         i: Int64  9
         f: Int64  0
-      x: Pair{Int64, UnitRange{Int64}}  9=>99:109
-       first: Int64  9
-   +   second: UnitRange{Int64} (11,) 16 99:109
+   +  x: Pair{Int64, UnitRange{Int64}}  9=>99:109
       d: Dict{Int64, Int64}  Dict(3=>4, 1=>2)
        3: Int64  4
        1: Int64  2
-v     ds: Dict{Symbol, Int64}  Dict(:s=>4, :t=>7)
+      ds: Dict{Symbol, Int64}  Dict(:s=>4, :t=>7)
+       s: Int64  4
+v      t: Int64  7
 ```
 
-Explore a Module:
+#### Explore a Module:
 
 
 ```julia
@@ -100,13 +102,13 @@ eye()      # equivalent to `eye(Main)`
 
 ```jl
 julia> eye()
-[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit
+[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit
  >   : Module  Main
       Base: Module  Base
       Core: Module  Core
       InteractiveUtils: Module  InteractiveUtils
       Main: Module  Main
-      a: NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int6   +   h: Vector{Float64} (5,) 40 [0.0799809, 0.501278, 0.82563, 0.990924, 0.842197]
+      a: NamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeof(sin), Complex{Int6   +   h: Vector{Float64} (5,) 40 [0.589398, 0.761107, 0.963494, 0.835393, 0.488657]
        e: Expr  :(5 * sin(pi * t))
         head: Symbol  :call
         args: Vector{Any} (3,) 24 Any[:*, 5, :(sin(pi * t))]
@@ -124,22 +126,22 @@ julia> eye()
              3: Symbol  :t
        f: typeof(sin)  sin
    +   c: Complex{Int64}  0+33im
-       set: Set{Any}  Set(Any[:a, [2, 3, 4, 3, 1, 2, 2, 2], 9])
+       set: Set{Any}  Set(Any[:a, 9, [2, 3, 2, 5, 5, 1, 4, 5]])
         : Symbol  :a
-   +    : Vector{Int64} (8,) 64 [2, 3, 4, 3, 1, 2, 2, 2]
         : Int64  9
+   +    : Vector{Int64} (8,) 64 [2, 3, 2, 5, 5, 1, 4, 5]
        b: NamedTuple{(:c, :d, :e), Tuple{Int64, Int64, NamedTuple{(:i, :f), Tuple{Int64, Int64}}}}  (c = 1, d = 9, e = (        c: Int64  1
         d: Int64  9
         e: NamedTuple{(:i, :f), Tuple{Int64, Int64}}  (i = 9, f = 0)
          i: Int64  9
          f: Int64  0
-       x: Pair{Int64, UnitRange{Int64}}  9=>99:109
-v       first: Int64  9
+   +   x: Pair{Int64, UnitRange{Int64}}  9=>99:109
+v      d: Dict{Int64, Int64}  Dict(3=>4, 1=>2)
 ```
 
 </details>
 
-Explore a type tree:
+#### Explore a type tree:
 
 ```julia
 eye(Number)
@@ -149,8 +151,8 @@ eye(Number)
   
 ```jl
 julia> eye(Number)
-[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [q] quit
- >   : DataType  Number
+[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit
+>   : DataType  Number
    +  : UnionAll  Complex
       : DataType  Real
        : DataType  AbstractFloat
@@ -180,7 +182,7 @@ julia> eye(Number)
 
 </details>
 
-`eye` can also be used noninteractively.
+#### Use noninteractively
 With the keyword argument `interactive` set to `false`, `eye` returns the tree as a `FoldingTrees.Node`.
 That is automatically displayed via `show` or by using `FoldingTrees.print_tree`.
 
@@ -221,6 +223,28 @@ julia> eye(Number, interactive = false)
 ```
 
 </details>
+
+#### Summarize
+Show a summary of arrays in a named tuple (also useful for DataFrames).
+
+```julia
+d = (a = rand(100), b = rand(100:200, 100), c = 4rand(Float32, 100))
+eye(d)    # then hit `z` to summarize
+```
+<details>
+  <summary>Expand results</summary>
+  
+```jl
+julia> eye(d)
+[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit
+ >   : NamedTuple{(:a, :b, :c), Tuple{Vector{Float64}, Vector{Int64}, Vector{Float32}}}  (a = [0.721857, 0.174408, 0.897
+ >      +  a: Vector{Float64} (100,) 800 x̄=0.535717, q=[0.0372074, 0.305533, 0.556568, 0.770658, 0.979569]
+ >      +  b: Vector{Int64} (100,) 800 x̄=145.5, q=[100.0, 117.0, 145.5, 170.0, 200.0]
+ >      +  c: Vector{Float32} (100,) 400 x̄=1.90419, q=[0.0898504, 1.09705, 1.9039, 2.68442, 3.93898]
+```
+
+</details>
+
 
 
 ## API
