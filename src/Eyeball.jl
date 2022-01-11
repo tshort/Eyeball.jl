@@ -359,7 +359,7 @@ tostring(pn, obj)
 Returns a string with the text representation of `obj` with key `pn`.
 """
 function tostring(key, value)
-    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
+    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true, :displaysize => (3,200))
     show(io, value)
     svalue = String(take!(io.io))
     string(style(string(key), color = :cyan), ": ", 
@@ -379,7 +379,7 @@ function tostring(key, value::ExpandPlaceholder)
 end
 
 function tostring(key, x::Summarize)
-    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true)
+    io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true, :displaysize => (3,200))
     show(io, x)
     svalue = String(take!(io.io))
     string(style(string(key), color = :cyan), ": ", 
