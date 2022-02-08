@@ -16,8 +16,8 @@ using Statistics
 
 
 # TODO: de-vendor once changes are upstreamed.
-include("vendor/FoldingTrees/src/FoldingTrees.jl")
-using .FoldingTrees
+# include("vendor/FoldingTrees/src/FoldingTrees.jl")
+using FoldingTrees
 
 # include("ui.jl")
 
