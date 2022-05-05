@@ -14,6 +14,8 @@ using AbstractTrees
 import TerminalPager
 using Statistics
 
+using Requires
+
 
 # TODO: de-vendor once changes are upstreamed.
 # include("vendor/FoldingTrees/src/FoldingTrees.jl")
@@ -465,6 +467,10 @@ function getoptions(x::AbstractDict)
 end
 function getoptions(x::AbstractSet{T}) where T
     return zip(Iterators.repeated(Symbol("")), x)
+end
+
+function __init__()
+    @require MAT="23992714-dd62-5051-b70f-ba57cb901cac" getoptions(x::MAT.MAT_HDF5.MatlabHDF5File) = zip(keys(x), (read(x,k) for k in keys(x)))
 end
 
 iscorejunk(x) = parentmodule(parentmodule(parentmodule(x))) === Core && !isabstracttype(x) && isstructtype(x)
