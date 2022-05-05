@@ -162,6 +162,12 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
             sobj = String(take!(io.io))
             _pager(node.data.value)
             resetterm()
+        elseif i == Int('S')
+            node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
+            hasmethod(sort, (typeof(node.data.value),)) || return false
+            println(term.out_stream, "\n\nOpening sort(`$(node.data.key)`) ...\n")
+            choice = eye(sort(node.data.value))
+            resetterm()
         elseif i == Int('t')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             println(term.out_stream, "\n\nOpening typeof(`$(node.data.key)`) ...\n")
@@ -200,7 +206,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
