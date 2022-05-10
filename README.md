@@ -25,6 +25,7 @@ The user can interactively browse the object tree using the following keys:
 * `o` -- Open. Open the object in a new tree view. `O` opens all (mainly useful for modules).
 * `r` -- Return tree (a `FoldingTrees.Node`). 
 * `s` -- Show object.
+* `S` -- Sort. Open the sorted object in a new view.
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Summarize. Toggle a summary of the object and child objects. 
   For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
