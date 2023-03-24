@@ -150,6 +150,10 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
                 node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
                 return true
             end
+        elseif i == Int('Q')
+            returnfun = x -> 0
+            menu.chosen = true
+            return true
         elseif i == Int('r')
             returnfun = identity
             menu.chosen = true
@@ -207,6 +211,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
             choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
+@show choice
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
@@ -446,13 +451,16 @@ function getoptions(x::All{Module})
     values = (isdefined(y, pn) ? getproperty(y, pn) : UNDEF for pn in keys)
     return zip(keys, values)
 end
+
+const _NAMEDTUPLE_NAME = NamedTuple.body.body.name
+
 function getoptions(x::DataType)
     if isabstracttype(x)
         st = filter(t -> t !== Any, subtypes(x))
         return zip(Iterators.repeated(Symbol("")), st)
     end
     x <: Tuple && return nothing
-    if x.name === Base.NamedTuple_typename && !(x.parameters[1] isa Tuple)
+    if x.name === _NAMEDTUPLE_NAME && !(x.parameters[1] isa Tuple)
         # named tuple type with unknown field names
         return nothing
     end
