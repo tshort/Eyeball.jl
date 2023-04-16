@@ -14,6 +14,8 @@ using AbstractTrees
 import TerminalPager
 using Statistics
 
+using Humanize
+
 
 # TODO: de-vendor once changes are upstreamed.
 # include("vendor/FoldingTrees/src/FoldingTrees.jl")
@@ -384,13 +386,15 @@ function tostring(key, value)
     show(io, value)
     svalue = String(take!(io.io))
     sz = SIZE[] == :none ? "" :
-         SIZE[] == :sizeof ? string(sizeof(value)) : string(Base.summarysize(value))
+         SIZE[] == :sizeof ? hustring(sizeof(value)) : hustring(Base.summarysize(value))
     string(style(string(key), color = :cyan), ": ", 
            style(string(typeof(value)), color = :green), " ", 
            style(sz, color = :blue), " ", 
            extras(value), " ", 
            svalue)
 end
+
+hustring(bytes) = Humanize.datasize(bytes, style=:bin, format = "%.0f")
 
 function tostring(key, value::UNDEFPlaceholder)
     string(style(string(key), color = :cyan), ": #undef")
