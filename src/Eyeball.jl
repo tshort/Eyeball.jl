@@ -23,7 +23,7 @@ using FoldingTrees
 
 export eye
 
-SIZE = :none
+SIZE = Ref(:none)
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 """
@@ -198,13 +198,14 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
                 end
             end
         elseif i == Int('.')
-            if SIZE == :none
-                SIZE = :displaysize
-            elseif SIZE == :displaysize
-                SIZE = :sizeof
+            if SIZE[] == :none
+                SIZE[] = :displaysize
+            elseif SIZE[] == :displaysize
+                SIZE[] = :sizeof
             else
-                SIZE = :none
+                SIZE[] = :none
             end
+            redo = true
             return true
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
@@ -382,8 +383,8 @@ function tostring(key, value)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true, :displaysize => (3,200))
     show(io, value)
     svalue = String(take!(io.io))
-    sz = SIZE == :none ? "" :
-         SIZE == :sizeof ? string(sizeof(value)) : string(summarysize(value))
+    sz = SIZE[] == :none ? "" :
+         SIZE[] == :sizeof ? string(sizeof(value)) : string(Base.summarysize(value))
     string(style(string(key), color = :cyan), ": ", 
            style(string(typeof(value)), color = :green), " ", 
            style(sz, color = :blue), " ", 
