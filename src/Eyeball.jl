@@ -221,7 +221,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [.] size [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
