@@ -29,6 +29,7 @@ The user can interactively browse the object tree using the following keys:
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Summarize. Toggle a summary of the object and child objects. 
   For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
+* `.` -- Sizes. Toggle display of sizes between none, `Base.summarysize` (includes subobjects), and `sizeof`.
 * `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the selected object.
 * `q` -- Quit.

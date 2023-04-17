@@ -51,8 +51,8 @@ end
     str = String(take!(io))
     nback, lines = linesplitter(str)
     @test nback == 0
-    @test lines[2] == " > +  \e[36mh\e[39m: \e[32mVector{Float64}\e[39m \e[35m(5,)\e[39m \e[33m40\e[39m [0.0, 0.0, 0.0, 0.0, 0.0]"
-    @test lines[8] == "   +  \e[36mx\e[39m: \e[32mPair{Int64, UnitRange{Int64}}\e[39m  9=>99:109"
+    @test lines[2] == " > +  \e[36mh\e[39m: \e[32mVector{Float64}\e[39m  \e[35m(5,)\e[39m [0.0, 0.0, 0.0, 0.0, 0.0]"
+    @test lines[8] == "   +  \e[36mx\e[39m: \e[32mPair{Int64, UnitRange{Int64}}\e[39m   9=>99:109"
     @test length(lines) == 11
     menu.cursoridx = 11
     # TerminalMenus.keypress(menu, UInt32('f'))

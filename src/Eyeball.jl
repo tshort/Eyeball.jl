@@ -14,6 +14,8 @@ using AbstractTrees
 import TerminalPager
 using Statistics
 
+using Humanize
+
 
 # TODO: de-vendor once changes are upstreamed.
 # include("vendor/FoldingTrees/src/FoldingTrees.jl")
@@ -23,6 +25,7 @@ using FoldingTrees
 
 export eye
 
+SIZE = Ref(:none)
 
 default_terminal() = REPL.LineEdit.terminal(Base.active_repl)
 """
@@ -48,6 +51,7 @@ During interactive browsing of the object tree, the following keys are available
 * `t` -- Typeof. Show the type of the object in a new tree view.
 * `z` -- Summarize. Toggle a summary of the object and child objects. 
   For arrays, this shows the mean and 0, 25, 50, 75, and 100% quantiles (skipping missings).
+* `.` -- Sizes. Toggle display of sizes between none, summarysize, and sizeof.
 * `0`-`9` -- Fold to depth. Also toggles expansion of items normally left folded.
 * `enter` -- Return the object.
 * `q` -- Quit.
@@ -195,6 +199,16 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
                     dc.string[] = tostring(dc.key, dc.value)
                 end
             end
+        elseif i == Int('.')
+            if SIZE[] == :none
+                SIZE[] = :displaysize
+            elseif SIZE[] == :displaysize
+                SIZE[] = :sizeof
+            else
+                SIZE[] = :none
+            end
+            redo = true
+            return true
         elseif i in Int.('0':'9')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
             expandall = foldctx.cursoridx == menu.cursoridx && foldctx.depth == i && foldctx.expandall
@@ -210,8 +224,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
         term = default_terminal()
         while true
             menu = TreeMenu(root, pagesize = REPL.displaysize(term)[1] - 2, dynamic = true, keypress = keypress)
-            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [q] quit", menu; cursor=cursor)
-@show choice
+            choice = TerminalMenus.request(term, "[f] fields [d] docs [e] expand [m/M] methodswith [o] open [r] tree [s] show [S] Sort [t] typeof [z] summarize [.] size [q] quit", menu; cursor=cursor)
             choice !== nothing && return returnfun(choice)
             if redo
                 redo = false
@@ -233,8 +246,7 @@ struct ObjectWrapper{K,V}
     showfields::Base.RefValue{Bool}
     summarize::Base.RefValue{Bool}
     ObjectWrapper{K,V}(key, value, string = Ref{Union{Nothing,String}}(nothing), showfields = Ref(false), summarize = Ref(false)) where {K,V} = 
-        new(key, value, string, showfields, summarize
-)
+        new(key, value, string, showfields, summarize)
 end
 
 Base.show(io::IO, x::ObjectWrapper) = print(io, tostring(x.key, x.value))
@@ -373,11 +385,16 @@ function tostring(key, value)
     io = IOContext(IOBuffer(), :compact => true, :limit => true, :color => true, :displaysize => (3,200))
     show(io, value)
     svalue = String(take!(io.io))
+    sz = SIZE[] == :none ? "" :
+         SIZE[] == :sizeof ? hustring(sizeof(value)) : hustring(Base.summarysize(value))
     string(style(string(key), color = :cyan), ": ", 
            style(string(typeof(value)), color = :green), " ", 
+           style(sz, color = :blue), " ", 
            extras(value), " ", 
            svalue)
 end
+
+hustring(bytes) = Humanize.datasize(bytes, style=:bin, format = "%.0f")
 
 function tostring(key, value::UNDEFPlaceholder)
     string(style(string(key), color = :cyan), ": #undef")
@@ -408,7 +425,7 @@ Returns a string with any extra information about `x`.
 For AbstractArrays, this returns size information.
 """
 extras(x) = ""
-extras(x::AbstractArray) = style(string(size(x)), color = :magenta) * " " * style(string(sizeof(x)), color = :yellow)
+extras(x::AbstractArray) = style(string(size(x)), color = :magenta) 
 
 """
 ```
