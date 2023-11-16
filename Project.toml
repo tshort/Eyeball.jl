@@ -13,7 +13,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TerminalPager = "0c614874-6106-40ed-a7c2-2f1cd0bff883"
 
 [compat]
-AbstractTrees = "0.3.4"
+AbstractTrees = "0.4"
 FoldingTrees = "1.2.0"
 Humanize = "1.0.0"
 TerminalPager = "^0.4"
