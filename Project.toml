@@ -1,7 +1,7 @@
 name = "Eyeball"
 uuid = "ce36242b-ad83-4f84-8519-47cd8aeefd60"
 authors = ["Tom Short <tshort.rlists@gmail.com>"]
-version = "0.5.1"
+version = "0.5.2"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -16,7 +16,7 @@ TerminalPager = "0c614874-6106-40ed-a7c2-2f1cd0bff883"
 AbstractTrees = "0.4"
 FoldingTrees = "1.2.0"
 Humanize = "1.0.0"
-TerminalPager = "^0.4"
+TerminalPager = "^0.5"
 julia = "1.6"
 
 [extras]
