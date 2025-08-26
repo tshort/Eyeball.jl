@@ -106,7 +106,7 @@ function eye(x = Main, depth = 10; interactive = true, all = false)
             placeholder = popfirst!(node.children)
             ctx = placeholder.data.value
             shown = length(node.children)  # double what's shown
-            _iterate(ctx.itr, ctx.depth, shown, node, ctx.history) 
+            _iterate(ctx.arr, ctx.depth, shown, node, ctx.history)
             menu.pagesize = min(menu.maxsize, count_open_leaves(menu.root))
         elseif i == Int('m')
             node = FoldingTrees.setcurrent!(menu, menu.cursoridx)
@@ -255,7 +255,7 @@ struct UNDEFPlaceholder end
 const UNDEF = UNDEFPlaceholder()
 
 struct ExpandPlaceholder{T}
-    itr::T
+    arr::T
     depth::Int 
     shown::Int
     history
@@ -329,14 +329,16 @@ undefiterator(x::AbstractArray) = UndefIterator(x)
 
 function treelist(x, depth = 0, shown = 10, parent = Node{ObjectWrapper}(ObjectWrapper{String,typeof(x)}("", x)), history = Base.IdSet{Any}((x,)))
     usefields = parent.data.showfields[] && isstructtype(typeof(x)) && !(x isa DataType) 
-    itr = Iterators.Stateful(usefields ? getfields(x) : getoptions(x))
-    _iterate(itr, depth, shown, parent, history)
+    arr = [(usefields ? getfields(x) : getoptions(x))...]
+    _iterate(arr, depth, shown, parent, history)
     # parent.itr[] = itr
     return parent
 end
 
-function _iterate(itr, depth, shown, parent, history)
-    for (k,v) in Iterators.take(itr, shown)
+function _iterate(arr, depth, shown, parent, history)
+    for _ in 1:shown
+        isempty(arr) && break
+        k,v = popfirst!(arr)
         node = Node{ObjectWrapper}(ObjectWrapper{typeof(k),typeof(v)}(k, v), 
                     parent, 
                     foldobject(v) || (depth < 1 && shouldrecurse(v)))
@@ -347,11 +349,11 @@ function _iterate(itr, depth, shown, parent, history)
             node.foldchildren = false
         end
     end
-    if 0 < length(itr) < 4
-        _iterate(itr, depth, shown, parent, history)
+    if 0 < length(arr) < 4
+        _iterate(arr, depth, shown, parent, history)
     end
-    if length(itr) > 0
-        marker = Node{ObjectWrapper}(ObjectWrapper{Symbol,ExpandPlaceholder}(:!, ExpandPlaceholder(itr, depth, shown, history)))
+    if length(arr) > 0
+        marker = Node{ObjectWrapper}(ObjectWrapper{Symbol,ExpandPlaceholder}(:!, ExpandPlaceholder(arr, depth, shown, history)))
         marker.parent = parent
         pushfirst!(parent.children, marker)
     end
@@ -401,9 +403,8 @@ function tostring(key, value::UNDEFPlaceholder)
 end
 
 function tostring(key, value::ExpandPlaceholder)
-    N = length(value.itr.itr)
-    n = length(value.itr)
-    string(style(string(key), color = :red), "   Showing items 1-", N-n, " of ", N, ". Items remaining=", n, ". Hit [e] to expand.")
+    n = length(value.arr)
+    string(style(string(key), color = :red), "   Items remaining=", n, ". Hit [e] to expand.")
 end
 
 function tostring(key, x::Summarize)

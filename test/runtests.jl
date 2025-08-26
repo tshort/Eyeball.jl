@@ -32,7 +32,7 @@ end
     foreach(unfold!, nodes(root))
     FoldingTrees.print_tree(io, root)
     s = String(take!(io))
-    @test s[1:100] == "  : \e[32mNamedTuple{(:h, :e, :f, :c, :set, :b, :x, :d, :ds, :dm), Tuple{Vector{Float64}, Expr, typeo"
+    @test s[1:100] == "  : \e[32m@NamedTuple{h::Vector{Float64}, e::Expr, f::typeof(sin), c::Complex{Int64}, set::Set{Any}, "
     root = eye(a, 2, interactive = false)
     @test count_open_leaves(root) == 26
     root = eye(a, interactive = false)
